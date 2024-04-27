@@ -27,4 +27,5 @@ jobs:
           server: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           password: ${{ secrets.KEY_PASS }}
+          port: 22
           server-dir: "/var/www/node25.webte.fei.stuba.sk/zaverecne-zadanie/"
