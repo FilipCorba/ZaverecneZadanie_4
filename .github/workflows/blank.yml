@@ -1,6 +1,5 @@
-# This is a basic workflow to help you get started with Actions
-
 name: CI
+
 on:
   push:
     branches: ["main"]
@@ -14,12 +13,13 @@ jobs:
       - name: 🚚 Get latest code
         uses: actions/checkout@v4
 
-      - name: 📂 Sync files
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: 📂 SFTP Deploy
+        uses: appleboy/ssh-action@master
         with:
-          protocol: ftps
-          server: ${{ secrets.HOST }}
+          host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           password: ${{ secrets.KEY_PASS }}
-          port: 22
-          server-dir: "/var/www/node25.webte.fei.stuba.sk/zaverecne-zadanie/"
+          script: |
+            # SFTP commands to upload files
+            cd /var/www/node25.webte.fei.stuba.sk/zaverecne-zadanie/
+            put -r local_directory
