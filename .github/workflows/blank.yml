@@ -1,11 +1,19 @@
-name: CI
+# This is a basic workflow to help you get started with Actions
 
+name: CI
+# Controls when the workflow will run
 on:
+  # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
     branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+  # This workflow contains a single job called "build"
+
   web-deploy:
     name: 🎉 Deploy
     runs-on: ubuntu-latest
@@ -13,13 +21,12 @@ jobs:
       - name: 🚚 Get latest code
         uses: actions/checkout@v4
 
-      - name: 📂 SFTP Deploy
-        uses: appleboy/ssh-action@master
+      - name: 📂 Sync files
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          host: ${{ secrets.HOST }}
+          protocol: ftps-legacy
+          server: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           password: ${{ secrets.KEY_PASS }}
-          script: |
-            # SFTP commands to upload files
-            cd /var/www/node25.webte.fei.stuba.sk/zaverecne-zadanie/
-            put -r local_directory
+          port: 22
+          server-dir: "/var/www/node25.webte.fei.stuba.sk/zaverecne-zadanie/"
