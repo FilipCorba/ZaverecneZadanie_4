@@ -15,6 +15,5 @@ jobs:
             username: ${{ secrets.FTP_USERNAME }}
             password: ${{ secrets.FTP_PASSWORD }}
             server: ${{ secrets.FTP_SERVER }}
-            port: ${{ secrets.FTP_PORT }}
             remote_path: "/var/www/node25.webte.fei.stuba.sk/zaverecne-zadanie/"
             sftp_only: true
