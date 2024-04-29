@@ -17,10 +17,10 @@ jobs:
       - name: 📂 Sync files
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          protocol: sftp
+          protocol: ftps
           server: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           password: ${{ secrets.KEY_PASS }}
-          # Optionally, you can omit the port setting as SFTP commonly uses port 22
-          # port: 22
+          # Optionally, you can specify the port if your FTPS server uses a non-default port
+          # port: 990
           server-dir: "/var/www/node25.webte.fei.stuba.sk/zaverecne-zadanie/"
