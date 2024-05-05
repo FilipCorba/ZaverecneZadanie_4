@@ -67,7 +67,7 @@ class QR
     $quizId = $stmt->insert_id;
     $stmt->close();
 
-    echo $quizId;
+
     foreach ($quizData['questions'] as $questionData) {
       $questionText = $questionData['question'];
 
