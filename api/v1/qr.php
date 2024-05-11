@@ -128,7 +128,7 @@ class QR
   {
     // Check if the subject already exists in the database
     $stmt = $this->db->prepare("SELECT subject_id FROM subjects WHERE name = ?");
-    $stmt->bind_param("s", $subjectName);
+    $stmt->bind_param("s", strtolower($subjectName));
     $stmt->execute();
     $result = $stmt->get_result()->fetch_assoc();
     $stmt->close();
@@ -140,7 +140,7 @@ class QR
 
     // If the subject does not exist, insert it into the database
     $stmt = $this->db->prepare("INSERT INTO subjects (name) VALUES (?)");
-    $stmt->bind_param("s", $subjectName);
+    $stmt->bind_param("s", strtolower($subjectName));
     $stmt->execute();
     $subjectId = $stmt->insert_id;
     $stmt->close();
