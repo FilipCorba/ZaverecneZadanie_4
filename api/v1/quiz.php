@@ -16,7 +16,7 @@ switch ($method) {
   case 'POST':
     if ($lastUri == 'generate-qr') {
       $data = json_decode(file_get_contents('php://input'), true);
-      $responseData = $qr->generateQrCode($data);
+      $responseData = $qr->generateQrCode($data['data']);
       echo json_encode($responseData, JSON_PRETTY_PRINT);
     } else {
       $responseData = [
