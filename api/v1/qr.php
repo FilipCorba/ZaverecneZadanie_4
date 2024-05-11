@@ -1,6 +1,6 @@
 <?php
 
-
+require "config.php";
 require "vendor/autoload.php";
 
 use Endroid\QrCode\QrCode;
@@ -21,8 +21,6 @@ class QR
   public function generateQrCode($quizData)
   {
     // Insert quiz data into the database
-    
-
     do {
       // Generate a random code consisting of letters and numbers with length 5
       $randomCode = $this->generateRandomCode(5);
@@ -32,7 +30,7 @@ class QR
     } while ($codeExists);
 
     // Append the random code to the base URL
-    $qrCodeUrl = 'https://node25.webte.fei.stuba.sk/survey?code=' . $randomCode;
+    $qrCodeUrl = 'https://node' . PERSONAL_CODE . '.webte.fei.stuba.sk/survey?code=' . $randomCode;
 
     $qrCode = QrCode::create($qrCodeUrl); // Create the QR code with the generated URL
     $writer = new PngWriter;
@@ -57,7 +55,7 @@ class QR
   private function checkCodeExists($randomCode)
   {
     // Prepare and execute query to check if the random code exists in the database
-    $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM qr_codes WHERE unique_code = ?");
+    $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM quizzes WHERE code = ?");
     $stmt->bind_param("s", $randomCode);
     $stmt->execute();
     $result = $stmt->get_result()->fetch_assoc();
@@ -88,9 +86,14 @@ class QR
   {
     $quizTitle = isset($quizData['title']) ? $quizData['title'] : "Quiz Title";
     $quizDescription = isset($quizData['description']) ? $quizData['description'] : "Quiz Description";
+    $quizUser = isset($quizData['user']) ? $quizData['user'] : "Quiz Title";
+    $quizSubject = isset($quizData['subject']) ? $quizData['subject'] : "Quiz subject";
 
-    $stmt = $this->db->prepare("INSERT INTO quizzes (title, description, code) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $quizTitle, $quizDescription, $randomCode);
+    $subjectId = $this->verifyExistenceAndCreateSubject($quizSubject);
+
+    // TO DO: change this so it takes user as parameter and uses that value instead of default 1 
+    $stmt = $this->db->prepare("INSERT INTO quizzes (user_id, title, description, code, subject_id) VALUES (1, ?, ?, ?, ?)");
+    $stmt->bind_param("sssi", $quizTitle, $quizDescription, $randomCode, $subjectId);
     $stmt->execute();
     $quizId = $stmt->insert_id;
     $stmt->close();
@@ -98,22 +101,22 @@ class QR
 
     foreach ($quizData['questions'] as $questionData) {
       $questionText = $questionData['question'];
+      $isOpenQuestion = $questionData['isOpenAnswer'] ? 1 : 0; // Convert boolean to integer
 
       // Insert question into the 'questions' table
       $stmt = $this->db->prepare("INSERT INTO questions (quiz_id, question_text, open_question) VALUES (?, ?, ?)");
       $stmt->bind_param("iss", $quizId, $questionText, $isOpenQuestion);
-      $isOpenQuestion = $questionData['isOpenAnswer'] ? 1 : 0; // Convert boolean to integer
       $stmt->execute();
       $questionId = $stmt->insert_id;
       $stmt->close();
 
-      // Insert answers for the question into the 'answers' table
-      foreach ($questionData['answers'] as $answerData) {
-        $answerText = $answerData['label']; // Assuming label is the answer text
-        $isCorrect = $answerData['isCorrect'] ? 1 : 0; // Convert boolean to integer
+      // Insert options for the question into the 'options' table
+      foreach ($questionData['options'] as $optionData) {
+        $optionText = $optionData['label']; // Assuming label is the option text
+        $isCorrect = $optionData['isCorrect'] ? 1 : 0; // Convert boolean to integer
 
-        $stmt = $this->db->prepare("INSERT INTO answers (question_id, answer_text, is_correct) VALUES (?, ?, ?)");
-        $stmt->bind_param("isi", $questionId, $answerText, $isCorrect);
+        $stmt = $this->db->prepare("INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)");
+        $stmt->bind_param("isi", $questionId, $optionText, $isCorrect);
         $stmt->execute();
         $stmt->close();
       }
@@ -122,8 +125,27 @@ class QR
     return $quizId;
   }
 
+  private function verifyExistenceAndCreateSubject($subjectName)
+  {
+    // Check if the subject already exists in the database
+    $stmt = $this->db->prepare("SELECT subject_id FROM subjects WHERE name = ?");
+    $stmt->bind_param("s", $subjectName);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
 
+    // If the subject already exists, return its ID
+    if ($result !== null) {
+      return $result['subject_id'];
+    }
 
+    // If the subject does not exist, insert it into the database
+    $stmt = $this->db->prepare("INSERT INTO subjects (name) VALUES (?)");
+    $stmt->bind_param("s", $subjectName);
+    $stmt->execute();
+    $subjectId = $stmt->insert_id;
+    $stmt->close();
+
+    return $subjectId;
+  }
 }
-
-?>
