@@ -89,7 +89,7 @@ class QR
     $quizUser = isset($quizData['user']) ? $quizData['user'] : "Quiz Title";
     $quizSubject = isset($quizData['subject']) ? $quizData['subject'] : "Quiz subject";
 
-    $subjectId = $this->verifyExistenceAndCreateSubject($quizSubject);
+    $subjectId = $this->verifyExistenceAndCreateSubject($quizSubject); 
 
     // TO DO: change this so it takes user as parameter and uses that value instead of default 1 
     $stmt = $this->db->prepare("INSERT INTO quizzes (user_id, title, description, code, subject_id) VALUES (1, ?, ?, ?, ?)");
