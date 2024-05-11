@@ -21,7 +21,7 @@ class QR
   public function generateQrCode($quizData)
   {
     // Insert quiz data into the database
-    $quizId = $this->insertQuizData($quizData);
+    
 
     do {
       // Generate a random code consisting of letters and numbers with length 5
@@ -41,13 +41,14 @@ class QR
     // Encode the image data to base64
     $imageData = base64_encode($result->getString());
 
+
     // Prepare the response data
     $responseData = [
       'image' => 'data:image/png;base64,' . $imageData, // Include the base64 encoded image data in the response
       'qr_code' => $qrCodeUrl, // Include the generated QR code URL in the response
     ];
 
-    $this->insertQrCodeData($qrCodeUrl, $randomCode, $quizId);
+    $quizId = $this->insertQuizData($quizData, $randomCode);
 
     return $responseData;
   }
@@ -82,25 +83,14 @@ class QR
     return $randomCode;
   }
 
-  private function insertQrCodeData($qrCodeUrl, $randomCode, $quizId)
-  {
-    // Prepare and execute query to insert data into qr_codes table
-    $stmt = $this->db->prepare("INSERT INTO qr_codes (user_id, qr_code, unique_code, quiz_id) VALUES (?, ?, ?, ?)");
-    // Assuming user_id is always 1 (modify as per your actual requirement)
-    $userId = 1;
-    $stmt->bind_param("isss", $userId, $qrCodeUrl, $randomCode, $quizId);
-    $stmt->execute();
-    $stmt->close();
-  }
 
-
-  private function insertQuizData($quizData)
+  private function insertQuizData($quizData, $randomCode)
   {
     $quizTitle = isset($quizData['title']) ? $quizData['title'] : "Quiz Title";
     $quizDescription = isset($quizData['description']) ? $quizData['description'] : "Quiz Description";
 
-    $stmt = $this->db->prepare("INSERT INTO quizzes (title, description) VALUES (?, ?)");
-    $stmt->bind_param("ss", $quizTitle, $quizDescription);
+    $stmt = $this->db->prepare("INSERT INTO quizzes (title, description, code) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $quizTitle, $quizDescription, $randomCode);
     $stmt->execute();
     $quizId = $stmt->insert_id;
     $stmt->close();
