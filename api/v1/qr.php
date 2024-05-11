@@ -108,7 +108,7 @@ class QR
       $stmt->close();
 
       // Insert answers for the question into the 'answers' table
-      foreach ($questionData['answers'] as $answerData) {
+      foreach ($questionData['options'] as $answerData) {
         $answerText = $answerData['label']; // Assuming label is the answer text
         $isCorrect = $answerData['isCorrect'] ? 1 : 0; // Convert boolean to integer
 
