@@ -6,15 +6,12 @@ require_once 'config.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-  echo 'Preflight request';
-  header('Access-Control-Allow-Origin: http://localhost:5173');
-  header('Access-Control-Allow-Methods: GET, POST');
-  header('Access-Control-Allow-Headers: Content-Type');
-  exit;
-}
+header('Content-Type: application/json');
 
 $uri = strtok($_SERVER['REQUEST_URI'], '?');
+
+
+
 
 $lastUri = basename($uri);
 
@@ -22,6 +19,7 @@ switch ($method) {
   case 'POST':
     if ($lastUri == 'login') {
       $data = json_decode(file_get_contents('php://input'), true);
+
       $username = $data['username'];
       $password = $data['password'];
 
@@ -58,7 +56,6 @@ switch ($method) {
       $username = $data['username'];
       $password = $data['password'];
       $email = $data['email'];
-
       $stmt = $db->prepare("SELECT * FROM users WHERE name = ?");
       $stmt->bind_param("s", $username);
       $stmt->execute();
@@ -75,7 +72,7 @@ switch ($method) {
         $stmt->execute();
 
         $responseData = [
-          'success' => 'User registered successfully',
+          'success' => 'User' . $username . ' registered successfully',
         ];
       }
 
