@@ -81,7 +81,6 @@ class QR
     return $randomCode;
   }
 
-
   private function insertQuizData($quizData, $randomCode)
   {
     $quizTitle = isset($quizData['title']) ? $quizData['title'] : "Quiz Title";
