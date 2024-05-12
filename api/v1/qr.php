@@ -16,32 +16,33 @@ class QR
     $this->db = $db;
   }
 
-
-
-  public function generateQrCode($quizData)
-  {
+  public function generateQrCodeAndInsertQuizData($quizData) {
     // Insert quiz data into the database
     do {
       $randomCode = $this->generateRandomCode(5);
       $codeExists = $this->checkCodeExists($randomCode);
     } while ($codeExists);
 
+    $responseData = $this->generateQrCode($randomCode);
+    $this->insertQuizData($quizData, $randomCode);
+    return $responseData;
+  }
+
+  public function generateQrCode($randomCode)
+  {
     $qrCodeUrl = 'https://node' . PERSONAL_CODE . '.webte.fei.stuba.sk/survey?code=' . $randomCode;
 
     $qrCode = QrCode::create($qrCodeUrl); // Create the QR code with the generated URL
     $writer = new PngWriter;
     $result = $writer->write($qrCode); // Write the QR code to a PNG image
 
-    // Encode the image data to base64
+    // // Encode the image data to base64
     $imageData = base64_encode($result->getString());
-
 
     $responseData = [
       'image' => 'data:image/png;base64,' . $imageData, // Include the base64 encoded image data in the response
       'qr_code' => $qrCodeUrl, // Include the generated QR code URL in the response
     ];
-
-    $this->insertQuizData($quizData, $randomCode);
 
     return $responseData;
   }

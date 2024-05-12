@@ -13,45 +13,80 @@ $lastUri = basename($uri);
 
 switch ($lastUri) {
   case 'generate-qr':
-    handleGenerateQR($method, $qr);
+    if ($method === 'POST') {
+      handleGenerateQR($qr);
+    } elseif ($method === 'GET') {
+      handleGetQR($qr);
+    } else {
+      handleInvalidRequestMethod();
+    }
     break;
   default:
-    $responseData = [
-      'error' => 'Invalid endpoint'
-    ];
-    http_response_code(404);
-    echo json_encode($responseData);
+    handleInvalidEndpoint();
     break;
 }
 
 
-function handleGenerateQR($method, $qr)
+function handleGenerateQR($qr)
 {
-  // Check if the request contains a valid token in the Authorization header
   $token = getTokenFromAuthorizationHeader();
 
-  if ($method === 'POST') {
-    $requestData = json_decode(file_get_contents('php://input'), true);
-    $data = $requestData['data'];
-    if (!isValidToken($token, $data['user'])) {
+  $requestData = json_decode(file_get_contents('php://input'), true);
+  $data = $requestData['data'];
+  if (!isValidToken($token, $data['user'])) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+  $responseData = $qr->generateQrCodeAndInsertQuizData($data);
+  echo json_encode($responseData, JSON_PRETTY_PRINT);
+}
+
+function handleGetQR($qr)
+{
+  $code = isset($_GET['code']) ? $_GET['code'] : null;
+
+  if ($code) {
+    $qrCode = $qr->generateQrCode($code);
+
+    if ($qrCode) {
+      echo json_encode($qrCode, JSON_PRETTY_PRINT);
+    } else {
       $responseData = [
-        'error' => 'Unauthorized token'
+        'error' => 'QR code not found'
       ];
-      http_response_code(403);
+      http_response_code(404);
       echo json_encode($responseData);
-      exit;
     }
-    $responseData = $qr->generateQrCode($data);
-    echo json_encode($responseData, JSON_PRETTY_PRINT);
   } else {
     $responseData = [
-      'error' => 'Invalid request method'
+      'error' => 'Missing code parameter'
     ];
     http_response_code(400);
     echo json_encode($responseData);
   }
 }
 
+function handleInvalidEndpoint()
+{
+  $responseData = [
+    'error' => 'Invalid endpoint'
+  ];
+  http_response_code(404);
+  echo json_encode($responseData);
+}
+
+function handleInvalidRequestMethod()
+{
+  $responseData = [
+    'error' => 'Invalid request method'
+  ];
+  http_response_code(400);
+  echo json_encode($responseData);
+}
 
 function isValidToken($token, $userId)
 {
