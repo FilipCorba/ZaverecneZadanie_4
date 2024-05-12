@@ -1,66 +1,13 @@
+/*https://editor.swagger.io/*/
 openapi: 3.0.0
 info:
-  title: WEBTE final assignment API
+  title: Your API Title
+  description: Description of your API
   version: 1.0.0
 paths:
-  /quiz.php/generate-qr:
+  /login:
     post:
-      tags:
-        - Quiz
-      summary: Generate QR Code for Quiz
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                data:
-                  type: object
-                  properties:
-                    title:
-                      type: string
-                    description:
-                      type: string
-                    subject:
-                      type: string
-                    user:
-                      type: integer
-                    questions:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          question:
-                            type: string
-                          isOpenAnswer:
-                            type: boolean
-                          options:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                label:
-                                  type: string
-                                isCorrect:
-                                  type: boolean
-      responses:
-        '200':
-          description: QR Code generated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  image:
-                    type: string
-                  qr_code:
-                    type: string
-  /auth.php/login:
-    post:
-      tags:
-        - Auth
-      summary: Login
+      summary: Handles user login
       requestBody:
         required: true
         content:
@@ -72,23 +19,42 @@ paths:
                   type: string
                 password:
                   type: string
+              required:
+                - username
+                - password
       responses:
         '200':
-          description: Login successful
+          description: Successful login
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: string
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      username:
+                        type: string
+                      email:
+                        type: string
                   token:
                     type: string
-        '401':
-          description: Unauthorized
-  /auth.php/register:
+        '400':
+          description: Invalid password or missing parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /register:
     post:
-      tags:
-        - Auth
-      summary: Register
+      summary: Handles user registration
       requestBody:
         required: true
         content:
@@ -96,23 +62,93 @@ paths:
             schema:
               type: object
               properties:
-                email:
-                  type: string
                 username:
                   type: string
                 password:
                   type: string
+                email:
+                  type: string
+              required:
+                - username
+                - password
+                - email
       responses:
         '200':
-          description: Registration successful
+          description: Successful registration
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: string
                   user_id:
                     type: integer
                   token:
                     type: string
         '400':
-          description: Bad request
+          description: Username or email already exists or missing parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /passwordChange:
+    post:
+      summary: Handles password change
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idUser:
+                  type: integer
+                password:
+                  type: string
+                newPassword:
+                  type: string
+              required:
+                - idUser
+                - password
+                - newPassword
+      responses:
+        '200':
+          description: Successful password change
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      username:
+                        type: string
+                      email:
+                        type: string
+        '400':
+          description: Invalid current password or missing parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '404':
+          description: User not found or password change request expired
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
