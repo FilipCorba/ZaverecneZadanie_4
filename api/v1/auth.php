@@ -26,28 +26,20 @@ switch ($method) {
     break;
 }
 
-
 function handleLogin()
 {
-  global $db;
   $data = json_decode(file_get_contents('php://input'), true);
   $username = $data['username'];
   $password = $data['password'];
-  $stmt = $db->prepare("SELECT * FROM users WHERE name = ?");
-  $stmt->bind_param("s", $username);
-  $stmt->execute();
-  $result = $stmt->get_result();
-  $user = $result->fetch_assoc();
+
+  $user = getUserByName($username);
+
   if ($user) {
     if (password_verify($password, $user['password'])) {
       // Generate token for the logged in user and save it into DB
       $token = generateToken();
-      date_default_timezone_set('Europe/Bratislava');
-      $expiration = date('Y-m-d H:i:s', strtotime('+1 day')); // Token expiration in 1 day
-      $stmt = $db->prepare("INSERT INTO tokens (token, user_id, expiration_timestamp) VALUES (?, ?, ?)");
-      $stmt->bind_param("sis", $token, $user['user_id'], $expiration);
+      saveToken($token, $user['user_id']);
 
-      $stmt->execute();
       $responseData = [
         'success' => 'Login successful',
         'user' => [
@@ -70,49 +62,33 @@ function handleLogin()
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
-
 function handleRegistration()
 {
-  global $db;
   $data = json_decode(file_get_contents('php://input'), true);
   $username = $data['username'];
   $password = $data['password'];
   $email = $data['email'];
 
-  $stmt = $db->prepare("SELECT * FROM users WHERE name = ?");
-  $stmt->bind_param("s", $username);
-  $stmt->execute();
-  $result = $stmt->get_result();
-  $user = $result->fetch_assoc();
+  $user = getUserByName($username);
 
-  $stmt = $db->prepare("SELECT * FROM users WHERE mail = ?");
-  $stmt->bind_param("s", $email);
-  $stmt->execute();
-  $result = $stmt->get_result();
-  $userWithEmail = $result->fetch_assoc();
+  $userWithEmail = getUserByEmail($email);
 
   if ($user) {
     $responseData = [
       'error' => 'Username already exists',
     ];
+    http_response_code(400);
   } else if ($userWithEmail) {
     $responseData = [
       'error' => 'Email already exists',
     ];
+    http_response_code(400);
   } else {
-    $stmt = $db->prepare("INSERT INTO users (name, password, mail) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $username, password_hash($password, PASSWORD_DEFAULT), $email);
-    $stmt->execute();
-    $userId = $stmt->insert_id; // Get the ID of the newly inserted user
+    $userId = insertUser($username, $password, $email); 
 
     // Generate token for the registered user and save it into DB
     $token = generateToken();
-    $expiration = date('Y-m-d H:i:s', strtotime('+1 day')); // Token expiration in 1 day
-
-    $stmt = $db->prepare("INSERT INTO tokens (token, user_id, expiration_timestamp) VALUES (?, ?, ?)");
-    $stmt->bind_param("sis", $token, $userId, $expiration);
-
-    $stmt->execute();
+    saveToken($token, $userId);
 
     $responseData = [
       'success' => 'User ' . $username . ' registered successfully',
@@ -123,6 +99,44 @@ function handleRegistration()
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
+function getUserByName($username)
+{
+    global $db;
+    $stmt = $db->prepare("SELECT * FROM users WHERE name = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->fetch_assoc();
+}
+
+function getUserByEmail($email)
+{
+    global $db;
+    $stmt = $db->prepare("SELECT * FROM users WHERE mail = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->fetch_assoc();
+}
+
+function insertUser($username, $password, $email)
+{
+    global $db;
+    $stmt = $db->prepare("INSERT INTO users (name, password, mail) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $username, password_hash($password, PASSWORD_DEFAULT), $email);
+    $stmt->execute();
+    return $stmt->insert_id;
+}
+
+function saveToken($token, $userId)
+{
+    global $db;
+    date_default_timezone_set('Europe/Bratislava');
+    $expiration = date('Y-m-d H:i:s', strtotime('+1 day')); // Token expiration in 1 day
+    $stmt = $db->prepare("INSERT INTO tokens (token, user_id, expiration_timestamp) VALUES (?, ?, ?)");
+    $stmt->bind_param("sis", $token, $userId, $expiration);
+    $stmt->execute();
+}
 
 function handleInvalidEndpoint()
 {
@@ -132,7 +146,6 @@ function handleInvalidEndpoint()
   echo json_encode($responseData);
 }
 
-
 function handleInvalidRequestMethod()
 {
   $responseData = [
@@ -140,7 +153,6 @@ function handleInvalidRequestMethod()
   ];
   echo json_encode($responseData);
 }
-
 
 function generateToken()
 {
