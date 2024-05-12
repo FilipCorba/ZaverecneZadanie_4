@@ -26,6 +26,7 @@ switch ($method) {
     break;
 }
 
+
 function handleLogin()
 {
   global $db;
@@ -43,9 +44,8 @@ function handleLogin()
       $token = generateToken();
       date_default_timezone_set('Europe/Bratislava');
       $expiration = date('Y-m-d H:i:s', strtotime('+1 day')); // Token expiration in 1 day
-      $is_admin = $user['role'] === 'admin' ? 1 : 0;
-      $stmt = $db->prepare("INSERT INTO tokens (token, user_id, expiration_timestamp, is_admin) VALUES (?, ?, ?, ?)");
-      $stmt->bind_param("sisi", $token, $user['user_id'], $expiration, $is_admin);
+      $stmt = $db->prepare("INSERT INTO tokens (token, user_id, expiration_timestamp) VALUES (?, ?, ?)");
+      $stmt->bind_param("sis", $token, $user['user_id'], $expiration);
 
       $stmt->execute();
       $responseData = [
@@ -70,6 +70,7 @@ function handleLogin()
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
+
 function handleRegistration()
 {
   global $db;
@@ -77,7 +78,6 @@ function handleRegistration()
   $username = $data['username'];
   $password = $data['password'];
   $email = $data['email'];
-  $role = $data['role'];
 
   $stmt = $db->prepare("SELECT * FROM users WHERE name = ?");
   $stmt->bind_param("s", $username);
@@ -100,18 +100,17 @@ function handleRegistration()
       'error' => 'Email already exists',
     ];
   } else {
-    $stmt = $db->prepare("INSERT INTO users (name, password, mail, role) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("ssss", $username, password_hash($password, PASSWORD_DEFAULT), $email, $role);
+    $stmt = $db->prepare("INSERT INTO users (name, password, mail) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $username, password_hash($password, PASSWORD_DEFAULT), $email);
     $stmt->execute();
     $userId = $stmt->insert_id; // Get the ID of the newly inserted user
 
     // Generate token for the registered user and save it into DB
     $token = generateToken();
     $expiration = date('Y-m-d H:i:s', strtotime('+1 day')); // Token expiration in 1 day
-    $is_admin = $role === 'admin' ? 1 : 0;
 
-    $stmt = $db->prepare("INSERT INTO tokens (token, user_id, expiration_timestamp, is_admin) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("sisi", $token, $userId, $expiration, $is_admin);
+    $stmt = $db->prepare("INSERT INTO tokens (token, user_id, expiration_timestamp) VALUES (?, ?, ?)");
+    $stmt->bind_param("sis", $token, $userId, $expiration);
 
     $stmt->execute();
 
@@ -124,6 +123,7 @@ function handleRegistration()
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
+
 function handleInvalidEndpoint()
 {
   $responseData = [
@@ -132,6 +132,7 @@ function handleInvalidEndpoint()
   echo json_encode($responseData);
 }
 
+
 function handleInvalidRequestMethod()
 {
   $responseData = [
@@ -139,6 +140,7 @@ function handleInvalidRequestMethod()
   ];
   echo json_encode($responseData);
 }
+
 
 function generateToken()
 {

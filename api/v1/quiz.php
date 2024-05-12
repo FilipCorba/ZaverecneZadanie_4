@@ -23,21 +23,23 @@ switch ($lastUri) {
     break;
 }
 
+
 function handleGenerateQR($method, $qr)
 {
   // Check if the request contains a valid token in the Authorization header
   $token = getTokenFromAuthorizationHeader();
-  if (!isValidToken($token)) {
-    $responseData = [
-      'error' => 'Unauthorized token'
-    ];
-    echo json_encode($responseData);
-    exit;
-  }
 
   if ($method === 'POST') {
-    $data = json_decode(file_get_contents('php://input'), true);
-    $responseData = $qr->generateQrCode($data['data']);
+    $requestData = json_decode(file_get_contents('php://input'), true);
+    $data = $requestData['data'];
+    if (!isValidToken($token, $data['user'])) {
+      $responseData = [
+        'error' => 'Unauthorized token'
+      ];
+      echo json_encode($responseData);
+      exit;
+    }
+    $responseData = $qr->generateQrCode($data);
     echo json_encode($responseData, JSON_PRETTY_PRINT);
   } else {
     $responseData = [
@@ -47,24 +49,28 @@ function handleGenerateQR($method, $qr)
   }
 }
 
-function isValidToken($token)
+
+function isValidToken($token, $userId)
 {
   global $db;
 
   // Prepare and execute query to check if the token is valid
   $stmt = $db->prepare(
     "SELECT COUNT(*) as count 
-    FROM tokens 
-      WHERE token = ? 
-      -- AND user_id = ? 
-      AND expiration_timestamp > NOW()");
-  $stmt->bind_param("s", $token);
+    FROM tokens t 
+    JOIN users u on u.user_id = t.user_id 
+      WHERE t.token = ? 
+      AND (t.user_id = ? OR u.role = 'admin') 
+      AND t.expiration_timestamp > NOW()"
+  );
+  $stmt->bind_param("si", $token, $userId);
   $stmt->execute();
   $result = $stmt->get_result()->fetch_assoc();
 
   // If count > 0, token is valid
   return $result['count'] > 0;
 }
+
 
 function getTokenFromAuthorizationHeader()
 {
