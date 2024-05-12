@@ -19,6 +19,7 @@ switch ($lastUri) {
     $responseData = [
       'error' => 'Invalid endpoint'
     ];
+    http_response_code(404);
     echo json_encode($responseData);
     break;
 }
@@ -36,6 +37,7 @@ function handleGenerateQR($method, $qr)
       $responseData = [
         'error' => 'Unauthorized token'
       ];
+      http_response_code(403);
       echo json_encode($responseData);
       exit;
     }
@@ -45,6 +47,7 @@ function handleGenerateQR($method, $qr)
     $responseData = [
       'error' => 'Invalid request method'
     ];
+    http_response_code(400);
     echo json_encode($responseData);
   }
 }

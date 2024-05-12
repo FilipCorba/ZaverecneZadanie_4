@@ -53,11 +53,13 @@ function handleLogin()
       $responseData = [
         'error' => 'Invalid password',
       ];
+      http_response_code(400);
     }
   } else {
     $responseData = [
       'error' => 'User not found',
     ];
+    http_response_code(404);
   }
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
@@ -143,6 +145,7 @@ function handleInvalidEndpoint()
   $responseData = [
     'error' => 'Invalid endpoint'
   ];
+  http_response_code(404);
   echo json_encode($responseData);
 }
 
@@ -151,6 +154,7 @@ function handleInvalidRequestMethod()
   $responseData = [
     'error' => 'Invalid request method'
   ];
+  http_response_code(400);
   echo json_encode($responseData);
 }
 
