@@ -1,0 +1,118 @@
+openapi: 3.0.0
+info:
+  title: WEBTE final assignment API
+  version: 1.0.0
+paths:
+  /quiz.php/generate-qr:
+    post:
+      tags:
+        - Quiz
+      summary: Generate QR Code for Quiz
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    subject:
+                      type: string
+                    user:
+                      type: integer
+                    questions:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          question:
+                            type: string
+                          isOpenAnswer:
+                            type: boolean
+                          options:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                label:
+                                  type: string
+                                isCorrect:
+                                  type: boolean
+      responses:
+        '200':
+          description: QR Code generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                  qr_code:
+                    type: string
+  /auth.php/login:
+    post:
+      tags:
+        - Auth
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '401':
+          description: Unauthorized
+  /auth.php/register:
+    post:
+      tags:
+        - Auth
+      summary: Register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: integer
+                  token:
+                    type: string
+        '400':
+          description: Bad request
