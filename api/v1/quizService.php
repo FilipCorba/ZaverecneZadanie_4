@@ -61,14 +61,14 @@ class QuizHandler
 
     foreach ($quizData['questions'] as $questionData) {
       $questionText = $questionData['question'];
-      $isOpenQuestion = $questionData['isOpenAnswer'] ? 1 : 0; // Convert boolean to integer
+      $isOpenQuestion = $questionData['isOpenAnswer'] == "true" ? 1 : 0; // Convert boolean to integer
 
       $questionId = $this->dbHandler->insertQuestion($quizId, $questionText, $isOpenQuestion);
 
       // Insert options for the question into the 'options' table
       foreach ($questionData['options'] as $optionData) {
         $optionText = $optionData['label']; // Assuming label is the option text
-        $isCorrect = $optionData['isCorrect'] ? 1 : 0; // Convert boolean to integer
+        $isCorrect = $optionData['isCorrect']  == "true" ? 1 : 0; // Convert boolean to integer
 
         $this->dbHandler->insertOption($questionId, $optionText, $isCorrect);
       }
