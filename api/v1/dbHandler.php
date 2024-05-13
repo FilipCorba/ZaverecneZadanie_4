@@ -21,12 +21,19 @@ class dbHandler
     $stmt->close();
     return $quizId;
   }
-
+  function updateQuizTitle($quizId, $newTitle)
+  {
+    $stmt = $this->db->prepare("UPDATE quizzes SET title = ? WHERE quiz_id = ?");
+    $stmt->bind_param("si", $newTitle, $quizId);
+    $success = $stmt->execute();
+    $stmt->close();
+    return $success;
+  }
   function getQuizById($quizId)
   {
-      global $db;
-  
-      $stmt = $db->prepare("SELECT 
+    global $db;
+
+    $stmt = $db->prepare("SELECT 
                               quizzes.quiz_id,
                               quizzes.user_id,
                               quizzes.title AS quiz_title,
@@ -57,37 +64,42 @@ class dbHandler
                               quizzes.quiz_id = ?
                             GROUP BY 
                               questions.question_id;");
-      $stmt->bind_param("i", $quizId);
-      $stmt->execute();
-      $result = $stmt->get_result();
-  
-      $quizData = $result->fetch_all(MYSQLI_ASSOC);
-  
-      // Organize the data into the desired structure
-      $formattedQuizData = [
-          'quiz_id' => $quizData[0]['quiz_id'],
-          'user_id' => $quizData[0]['user_id'],
-          'quiz_title' => $quizData[0]['quiz_title'],
-          'quiz_description' => $quizData[0]['quiz_description'],
-          'quiz_created_at' => $quizData[0]['quiz_created_at'],
-          'quiz_code' => $quizData[0]['quiz_code'],
-          'subject' => $quizData[0]['subject_name'],
-          'questions' => []
+    $stmt->bind_param("i", $quizId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $quizData = $result->fetch_all(MYSQLI_ASSOC);
+
+    // Check if quiz data is empty
+    if (empty($quizData)) {
+      return null;
+    }
+
+    // Organize the data into the desired structure
+    $formattedQuizData = [
+      'quiz_id' => $quizData[0]['quiz_id'],
+      'user_id' => $quizData[0]['user_id'],
+      'quiz_title' => $quizData[0]['quiz_title'],
+      'quiz_description' => $quizData[0]['quiz_description'],
+      'quiz_created_at' => $quizData[0]['quiz_created_at'],
+      'quiz_code' => $quizData[0]['quiz_code'],
+      'subject' => $quizData[0]['subject_name'],
+      'questions' => []
+    ];
+
+    foreach ($quizData as $row) {
+      $questionKey = 'question_' . $row['question_id'];
+      $formattedQuizData['questions'][$questionKey] = [
+        'question_text' => $row['question_text'],
+        'open_question' => $row['open_question'],
+        'options' => json_decode($row['options'], true)
       ];
-  
-      foreach ($quizData as $row) {
-          $questionKey = 'question_' . $row['question_id'];
-          $formattedQuizData['questions'][$questionKey] = [
-              'question_text' => $row['question_text'],
-              'open_question' => $row['open_question'],
-              'options' => json_decode($row['options'], true)
-          ];
-      }
-  
-      return $formattedQuizData;
+    }
+
+    return $formattedQuizData;
   }
-  
-  
+
+
 
   function insertQuestion($quizId, $questionText, $isOpenQuestion)
   {

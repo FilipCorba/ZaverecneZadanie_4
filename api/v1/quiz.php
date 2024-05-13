@@ -42,6 +42,12 @@ switch ($lastUri) {
       } else {
         // handleGetListOfQuizzes();
       }
+    } elseif ($method === 'PUT') {
+      if (isset($_GET['quiz-id'])) {
+        handleQuizTitleChange($dbHandler, $tokenHandler);
+      } else {
+        handleInvalidRequestMethod();
+      }
     } else {
       handleInvalidRequestMethod();
     }
@@ -135,9 +141,78 @@ function handleGetQuiz($dbHandler, $tokenHandler)
 
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
-
-function handleQuestionChange($tokenHandler)
+function handleQuestionChange($dbHandler)
 {
+
+}
+function handleQuizTitleChange($dbHandler, $tokenHandler)
+{
+  // Get user ID from URL
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+  // Get token from authorization header
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  // Get quiz ID from URL
+  $quizId = isset($_GET['quiz-id']) ? $_GET['quiz-id'] : null;
+  // Check if quiz ID is provided
+  if (!$quizId) {
+    $responseData = [
+      'error' => 'Quiz ID not provided'
+    ];
+    http_response_code(400);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  // Get new title from request body
+  $requestData = json_decode(file_get_contents('php://input'), true);
+  $newTitle = isset($requestData['new-title']) ? $requestData['new-title'] : null;
+
+  // Check if new title is provided
+  if (!$newTitle) {
+    $responseData = [
+      'error' => 'New title not provided'
+    ];
+    http_response_code(400);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  // Update quiz title
+  $success = $dbHandler->updateQuizTitle($quizId, $newTitle);
+
+  if ($success) {
+    // Get quiz by ID
+    $quiz = $dbHandler->getQuizById($quizId);
+
+    if ($quiz) {
+      $responseData = [
+        'success' => 'Quiz title update successful',
+      ];
+      http_response_code(200);
+    } else {
+      $responseData = [
+        'error' => 'Quiz not found',
+      ];
+      http_response_code(404);
+    }
+  } else {
+    $responseData = [
+      'error' => 'Failed to update quiz title'
+    ];
+    http_response_code(500);
+  }
+
+  echo json_encode($responseData);
 }
 
 function handleInvalidEndpoint()
