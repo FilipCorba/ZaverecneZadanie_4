@@ -45,6 +45,13 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
+    case 'quizes':
+      if ($method === 'GET') {
+        handleGetListOfQuizzes($quizHandler, $tokenHandler);
+      } else {
+        handleInvalidRequestMethod();
+      }
+      break;
   default:
     handleInvalidEndpoint();
     break;
@@ -94,7 +101,7 @@ function handleGetQR($quizHandler)
   }
 }
 
-function handleGetListOfQuizzes()
+function handleGetListOfQuizzes($quizHandler, $tokenHandler)
 {
 }
 

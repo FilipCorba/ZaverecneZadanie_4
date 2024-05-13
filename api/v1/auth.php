@@ -3,7 +3,7 @@
 require_once 'config.php';
 require_once 'token.php'; 
 
-$tokenHandler = new Token();
+$tokenHandler = new Token(); 
 
 $method = $_SERVER['REQUEST_METHOD'];
 header('Content-Type: application/json');
