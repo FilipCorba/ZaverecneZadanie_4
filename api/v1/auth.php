@@ -1,9 +1,9 @@
 <?php
 
 require_once 'config.php';
-require_once 'token.php'; 
+require_once 'token.php';
 
-$tokenHandler = new Token(); 
+$tokenHandler = new Token();
 
 $method = $_SERVER['REQUEST_METHOD'];
 header('Content-Type: application/json');
@@ -43,7 +43,7 @@ switch ($method) {
         handleInvalidEndpoint();
         break;
     }
-    break; 
+    break;
   default:
     handleInvalidRequestMethod();
     break;
@@ -58,33 +58,25 @@ function handlePasswordChange()
 
   $user = getUserById($userId);
   if ($user) {
-    if (isPasswordChangeRequestValid($user['password_change_timestamp'])) {
-      if (password_verify($password, $user['password'])) {
-        // Password verification successful, update the password
-        $hashedNewPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        updateUserPassword($userId, $hashedNewPassword);
+    if (password_verify($password, $user['password'])) {
+      // Password verification successful, update the password
+      $hashedNewPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+      updateUserPassword($userId, $hashedNewPassword);
 
-        $responseData = [
-          'success' => 'Password changed successfully',
-          'user' => [
-            'id' => $user['user_id'],
-            'username' => $user['name'],
-            'email' => $user['mail'],
-          ],
-        ];
-      } else {
-        // Invalid current password
-        $responseData = [
-          'error' => 'Invalid current password',
-        ];
-        http_response_code(400);
-      }
-    } else {
-      // Password change request expired
       $responseData = [
-        'error' => 'Password change request expired',
+        'success' => 'Password changed successfully',
+        'user' => [
+          'id' => $user['user_id'],
+          'username' => $user['name'],
+          'email' => $user['mail'],
+        ],
       ];
-      http_response_code(404);
+    } else {
+      // Invalid current password
+      $responseData = [
+        'error' => 'Invalid current password',
+      ];
+      http_response_code(400);
     }
   } else {
     // User not found
@@ -139,7 +131,7 @@ function handleRoleChange($tokenHandler)
 
   $userId = isset($_GET['userId']) ? $_GET['userId'] : null;
   $user = getUserById($userId);
-  
+
   if ($user) {
     changeUserRoleToAdmin($userId);
     $responseData = [
