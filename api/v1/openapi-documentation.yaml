@@ -237,7 +237,7 @@ paths:
                       type: string
                     subject:
                       type: string
-                    user:
+                    user_id:
                       type: integer
                     questions:
                       type: array

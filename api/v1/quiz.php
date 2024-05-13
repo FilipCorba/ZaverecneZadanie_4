@@ -35,7 +35,7 @@ function handleGenerateQR($qr, $tokenHandler)
 
   $requestData = json_decode(file_get_contents('php://input'), true);
   $data = $requestData['data'];
-  if (!$tokenHandler->isValidToken($token, $data['user'])) {
+  if (!$tokenHandler->isValidToken($token, $data['user_id'])) {
     $responseData = [
       'error' => 'Unauthorized token'
     ];

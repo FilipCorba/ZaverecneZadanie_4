@@ -51,7 +51,7 @@ class QR
   {
     $quizTitle = isset($quizData['title']) ? $quizData['title'] : "Quiz Title";
     $quizDescription = isset($quizData['description']) ? $quizData['description'] : "Quiz Description";
-    $quizUser = isset($quizData['user']) ? $quizData['user'] : "Quiz Title";
+    $quizUser = isset($quizData['user_id']) ? $quizData['user_id'] : "Quiz Title";
     $quizSubject = isset($quizData['subject']) ? $quizData['subject'] : "Quiz subject";
 
     $subjectId = $this->verifyExistenceAndCreateSubject($quizSubject);
