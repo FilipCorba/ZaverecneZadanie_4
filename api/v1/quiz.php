@@ -10,6 +10,7 @@ header('Content-Type: application/json');
 
 $quizHandler = new QuizHandler($db);
 $tokenHandler = new Token();
+$dbHandler = new dbHandler($db); // TO DO rename to DBHandler
 
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = strtok($_SERVER['REQUEST_URI'], '?');
@@ -36,8 +37,8 @@ switch ($lastUri) {
 
   case 'quiz':
     if ($method === 'GET') {
-      if (isset($_GET['quizId'])) {
-        handleGetQuiz($quizHandler, $tokenHandler);
+      if (isset($_GET['quiz-id'])) {
+        handleGetQuiz($dbHandler, $tokenHandler);
       } else {
         // handleGetListOfQuizzes();
       }
@@ -45,13 +46,13 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
-    case 'quizes':
-      if ($method === 'GET') {
-        handleGetListOfQuizzes($quizHandler, $tokenHandler);
-      } else {
-        handleInvalidRequestMethod();
-      }
-      break;
+  case 'quizes':
+    if ($method === 'GET') {
+      handleGetListOfQuizzes($quizHandler, $tokenHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
   default:
     handleInvalidEndpoint();
     break;
@@ -105,9 +106,9 @@ function handleGetListOfQuizzes($quizHandler, $tokenHandler)
 {
 }
 
-function handleGetQuiz($quizHandler, $tokenHandler)
+function handleGetQuiz($dbHandler, $tokenHandler)
 {
-  $userId = isset($_GET['userId']) ? $_GET['userId'] : null;
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
   // $user = getUserById($userId);
 
   $token = $tokenHandler->getTokenFromAuthorizationHeader();
@@ -120,8 +121,8 @@ function handleGetQuiz($quizHandler, $tokenHandler)
     exit;
   }
 
-  $quizId = isset($_GET['quizId']) ? $_GET['quizId'] : null;
-  $quiz = $quizHandler->getQuizById($quizId);
+  $quizId = isset($_GET['quiz-id']) ? $_GET['quiz-id'] : null;
+  $quiz = $dbHandler->getQuizById($quizId);
 
   if ($quiz) {
     $responseData = $quiz;

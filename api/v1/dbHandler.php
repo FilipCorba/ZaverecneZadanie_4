@@ -23,26 +23,83 @@ class dbHandler
   }
 
   function getQuizById($quizId)
-{
-  global $db;
-  $stmt = $db->prepare("SELECT * FROM quizzes WHERE quiz_id = ?");
-  $stmt->bind_param("i", $quizId);
-  $stmt->execute();
-  $result = $stmt->get_result();
-  return $result->fetch_assoc();
-}
+  {
+      global $db;
+  
+      $stmt = $db->prepare("SELECT 
+                              quizzes.quiz_id,
+                              quizzes.user_id,
+                              quizzes.title AS quiz_title,
+                              quizzes.description AS quiz_description,
+                              quizzes.created_at AS quiz_created_at,
+                              quizzes.code AS quiz_code,
+                              questions.question_id,
+                              questions.question_text,
+                              questions.open_question,
+                              JSON_ARRAYAGG(
+                                  JSON_OBJECT(
+                                      'option_id', o.option_id,
+                                      'option_text', o.option_text,
+                                      'is_correct', o.is_correct,
+                                      'option_text', o.option_text
+                                  )
+                              ) AS options,
+                              s.name AS subject_name
+                            FROM 
+                              quizzes 
+                            JOIN 
+                              questions ON questions.quiz_id = quizzes.quiz_id 
+                            JOIN 
+                              options o ON o.question_id = questions.question_id 
+                            JOIN 
+                              subjects s ON s.subject_id = quizzes.subject_id 
+                            WHERE 
+                              quizzes.quiz_id = ?
+                            GROUP BY 
+                              questions.question_id;");
+      $stmt->bind_param("i", $quizId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+  
+      $quizData = $result->fetch_all(MYSQLI_ASSOC);
+  
+      // Organize the data into the desired structure
+      $formattedQuizData = [
+          'quiz_id' => $quizData[0]['quiz_id'],
+          'user_id' => $quizData[0]['user_id'],
+          'quiz_title' => $quizData[0]['quiz_title'],
+          'quiz_description' => $quizData[0]['quiz_description'],
+          'quiz_created_at' => $quizData[0]['quiz_created_at'],
+          'quiz_code' => $quizData[0]['quiz_code'],
+          'subject' => $quizData[0]['subject_name'],
+          'questions' => []
+      ];
+  
+      foreach ($quizData as $row) {
+          $questionKey = 'question_' . $row['question_id'];
+          $formattedQuizData['questions'][$questionKey] = [
+              'question_text' => $row['question_text'],
+              'open_question' => $row['open_question'],
+              'options' => json_decode($row['options'], true)
+          ];
+      }
+  
+      return $formattedQuizData;
+  }
+  
+  
 
-function insertQuestion($quizId, $questionText, $isOpenQuestion)
-{
-  $stmt = $this->db->prepare("INSERT INTO questions (quiz_id, question_text, open_question) VALUES (?, ?, ?)");
-  $stmt->bind_param("iss", $quizId, $questionText, $isOpenQuestion);
-  $stmt->execute();
-  $questionId = $stmt->insert_id;
-  $stmt->close();
-  return $questionId;
-}
+  function insertQuestion($quizId, $questionText, $isOpenQuestion)
+  {
+    $stmt = $this->db->prepare("INSERT INTO questions (quiz_id, question_text, open_question) VALUES (?, ?, ?)");
+    $stmt->bind_param("iss", $quizId, $questionText, $isOpenQuestion);
+    $stmt->execute();
+    $questionId = $stmt->insert_id;
+    $stmt->close();
+    return $questionId;
+  }
 
-function insertOption($questionId, $optionText, $isCorrect)
+  function insertOption($questionId, $optionText, $isCorrect)
   {
     $stmt = $this->db->prepare("INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)");
     $stmt->bind_param("isi", $questionId, $optionText, $isCorrect);
@@ -84,5 +141,4 @@ function insertOption($questionId, $optionText, $isCorrect)
     // If count > 0, code exists
     return $result['count'] > 0;
   }
-
 }

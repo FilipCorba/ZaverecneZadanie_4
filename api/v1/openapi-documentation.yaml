@@ -1,4 +1,3 @@
-/*https://editor.swagger.io/*/
 openapi: 3.0.0
 info:
   title: WEBTE final assignment API
@@ -314,29 +313,24 @@ paths:
                   error:
                     type: string
                     description: Error message indicating that the QR code was not found.
-  quiz.php/quiz:
+  /quiz.php/quiz:
     get:
-      summary: Get quiz by ID
-      description: Retrieve a quiz by its ID.
+      summary: Get quiz details by ID
       parameters:
-        - in: query
-          name: quizId
+        - name: quiz-id
+          in: query
+          description: ID of the quiz to retrieve
           required: true
           schema:
             type: integer
-          description: The ID of the quiz to retrieve.
-          - in: query
-          name: userId
+            format: int32
+        - name: user-id
+          in: query
+          description: ID of the user who owns the quiz
           required: true
           schema:
             type: integer
-          description: The ID of the quiz to retrieve.
-        - in: header
-          name: Authorization
-          required: true
-          schema:
-            type: string
-          description: Token for authorization.
+            format: int32
       responses:
         '200':
           description: Successful response
@@ -345,40 +339,43 @@ paths:
               schema:
                 type: object
                 properties:
-                  quizId:
+                  quiz_id:
                     type: integer
-                  title:
+                    format: int32
+                  user_id:
+                    type: integer
+                    format: int32
+                  quiz_title:
+                    type: string
+                  quiz_description:
+                    type: string
+                  quiz_created_at:
+                    type: string
+                    format: date-time
+                  quiz_code:
+                    type: string
+                  subject:
                     type: string
                   questions:
-                    type: array
-                    items:
+                    type: object
+                    additionalProperties:
                       type: object
                       properties:
-                        questionId:
-                          type: integer
-                        questionText:
+                        question_text:
                           type: string
+                        open_question:
+                          type: boolean
                         options:
                           type: array
                           items:
-                            type: string
-        '400':
-          description: Invalid request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid request
-        '404':
-          description: Quiz not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Quiz not found
+                            type: object
+                            properties:
+                              option_id:
+                                type: integer
+                                format: int32
+                              option_text:
+                                type: string
+                              is_correct:
+                                type: boolean
+                              context:
+                                type: string
