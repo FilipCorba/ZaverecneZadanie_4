@@ -52,17 +52,17 @@ function handlePasswordChange()
 {
   $data = json_decode(file_get_contents('php://input'), true);
   //timestamp-prvykrat overenie hesla,tak zacne odpocet a ak do 5 min nepride nove heslo,tak sa akcia nekona...404 zmeskane
-  $idUser = $data['user_id'];
+  $userId = $data['user_id'];
   $password = $data['password'];
   $newPassword = $data['new_password'];
 
-  $user = getUserById($idUser);
+  $user = getUserById($userId);
   if ($user) {
     if (isPasswordChangeRequestValid($user['password_change_timestamp'])) {
       if (password_verify($password, $user['password'])) {
         // Password verification successful, update the password
         $hashedNewPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        updateUserPassword($idUser, $hashedNewPassword);
+        updateUserPassword($userId, $hashedNewPassword);
 
         $responseData = [
           'success' => 'Password changed successfully',
@@ -97,11 +97,11 @@ function handlePasswordChange()
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
-function getUserById($idUser)
+function getUserById($userId)
 {
   global $db;
   $stmt = $db->prepare("SELECT * FROM users WHERE user_id = ?");
-  $stmt->bind_param("i", $idUser);
+  $stmt->bind_param("i", $userId);
   $stmt->execute();
   $result = $stmt->get_result();
   return $result->fetch_assoc();
@@ -117,11 +117,11 @@ function isPasswordChangeRequestValid($timestamp)
   return $timeDifference <= $allowedTimeframe;
 }
 
-function updateUserPassword($idUser, $newPassword)
+function updateUserPassword($userId, $newPassword)
 {
   global $db;
   $stmt = $db->prepare("UPDATE users SET password = ? WHERE user_id = ?");
-  $stmt->bind_param("si", $newPassword, $idUser);
+  $stmt->bind_param("si", $newPassword, $userId);
   $stmt->execute();
 }
 
