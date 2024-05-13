@@ -314,3 +314,71 @@ paths:
                   error:
                     type: string
                     description: Error message indicating that the QR code was not found.
+  quiz.php/quiz:
+    get:
+      summary: Get quiz by ID
+      description: Retrieve a quiz by its ID.
+      parameters:
+        - in: query
+          name: quizId
+          required: true
+          schema:
+            type: integer
+          description: The ID of the quiz to retrieve.
+          - in: query
+          name: userId
+          required: true
+          schema:
+            type: integer
+          description: The ID of the quiz to retrieve.
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          description: Token for authorization.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  quizId:
+                    type: integer
+                  title:
+                    type: string
+                  questions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        questionId:
+                          type: integer
+                        questionText:
+                          type: string
+                        options:
+                          type: array
+                          items:
+                            type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid request
+        '404':
+          description: Quiz not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Quiz not found

@@ -7,7 +7,7 @@ use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 
 
-class QR
+class QuizHandler
 {
   private $db;
 
@@ -85,6 +85,16 @@ class QR
     $stmt->close();
     return $quizId;
   }
+
+  function getQuizById($quizId)
+{
+  global $db;
+  $stmt = $db->prepare("SELECT * FROM quizzes WHERE quiz_id = ?");
+  $stmt->bind_param("i", $quizId);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  return $result->fetch_assoc();
+}
 
   private function insertQuestion($quizId, $questionText, $isOpenQuestion)
   {

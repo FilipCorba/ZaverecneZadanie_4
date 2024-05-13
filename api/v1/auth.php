@@ -13,15 +13,19 @@ $lastUri = basename($uri);
 switch ($method) {
   case 'POST':
     switch ($lastUri) {
+
       case 'login':
         handleLogin($tokenHandler);
         break;
+
       case 'register':
         handleRegistration($tokenHandler);
         break;
+
       case 'passwordChange':
         handlePasswordChange();
         break;
+
       default:
         handleInvalidEndpoint();
         break;
@@ -30,9 +34,11 @@ switch ($method) {
 
   case 'PUT':
     switch ($lastUri) {
+
       case 'role':
         handleRoleChange($tokenHandler);
         break;
+
       default:
         handleInvalidEndpoint();
         break;
@@ -121,9 +127,6 @@ function updateUserPassword($idUser, $newPassword)
 
 function handleRoleChange($tokenHandler)
 {
-  $userId = isset($_GET['userId']) ? $_GET['userId'] : null;
-  $user = getUserById($userId);
-
   $token = $tokenHandler->getTokenFromAuthorizationHeader();
   if (!$tokenHandler->isAdminToken($token)) {
     $responseData = [
@@ -134,6 +137,9 @@ function handleRoleChange($tokenHandler)
     exit;
   }
 
+  $userId = isset($_GET['userId']) ? $_GET['userId'] : null;
+  $user = getUserById($userId);
+  
   if ($user) {
     changeUserRoleToAdmin($userId);
     $responseData = [

@@ -6,7 +6,7 @@ require_once 'token.php';
 
 header('Content-Type: application/json');
 
-$qr = new QR($db);
+$quizHandler = new QuizHandler($db);
 $tokenHandler = new Token();
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -16,9 +16,29 @@ $lastUri = basename($uri);
 switch ($lastUri) {
   case 'generate-qr':
     if ($method === 'POST') {
-      handleGenerateQR($qr, $tokenHandler);
+      handleGenerateQR($quizHandler, $tokenHandler);
     } elseif ($method === 'GET') {
-      handleGetQR($qr);
+      handleGetQR($quizHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
+
+  case 'question':
+    if ($method === 'PUT') {
+      // handleQuestionChange($tokenHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
+
+  case 'quiz':
+    if ($method === 'GET') {
+      if (isset($_GET['quizId'])) {
+        handleGetQuiz($quizHandler, $tokenHandler);
+      } else {
+        // handleGetListOfQuizzes();
+      }
     } else {
       handleInvalidRequestMethod();
     }
@@ -29,7 +49,7 @@ switch ($lastUri) {
 }
 
 
-function handleGenerateQR($qr, $tokenHandler)
+function handleGenerateQR($quizHandler, $tokenHandler)
 {
   $token = $tokenHandler->getTokenFromAuthorizationHeader();
 
@@ -43,16 +63,16 @@ function handleGenerateQR($qr, $tokenHandler)
     echo json_encode($responseData);
     exit;
   }
-  $responseData = $qr->generateQrCodeAndInsertQuizData($data);
+  $responseData = $quizHandler->generateQrCodeAndInsertQuizData($data);
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
-function handleGetQR($qr)
+function handleGetQR($quizHandler)
 {
   $code = isset($_GET['code']) ? $_GET['code'] : null;
 
   if ($code) {
-    $qrCode = $qr->generateQrCode($code);
+    $qrCode = $quizHandler->generateQrCode($code);
 
     if ($qrCode) {
       echo json_encode($qrCode, JSON_PRETTY_PRINT);
@@ -70,6 +90,44 @@ function handleGetQR($qr)
     http_response_code(400);
     echo json_encode($responseData);
   }
+}
+
+function handleGetListOfQuizzes()
+{
+}
+
+function handleGetQuiz($quizHandler, $tokenHandler)
+{
+  $userId = isset($_GET['userId']) ? $_GET['userId'] : null;
+  // $user = getUserById($userId);
+
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  $quizId = isset($_GET['quizId']) ? $_GET['quizId'] : null;
+  $quiz = $quizHandler->getQuizById($quizId);
+
+  if ($quiz) {
+    $responseData = $quiz;
+  } else {
+    $responseData = [
+      'error' => 'Quiz not found',
+    ];
+    http_response_code(404);
+  }
+
+  echo json_encode($responseData, JSON_PRETTY_PRINT);
+}
+
+function handleQuestionChange($tokenHandler)
+{
 }
 
 function handleInvalidEndpoint()
