@@ -22,11 +22,13 @@ class dbHandler
     return $quizId;
   }
 
+
+  // TO DO change this so it only returns quiz if it belongs to the userId from request url
   function getQuizById($quizId)
   {
-      global $db;
-  
-      $stmt = $db->prepare("SELECT 
+    global $db;
+
+    $stmt = $db->prepare("SELECT 
                               quizzes.quiz_id,
                               quizzes.user_id,
                               quizzes.title AS quiz_title,
@@ -57,37 +59,53 @@ class dbHandler
                               quizzes.quiz_id = ?
                             GROUP BY 
                               questions.question_id;");
-      $stmt->bind_param("i", $quizId);
-      $stmt->execute();
-      $result = $stmt->get_result();
-  
-      $quizData = $result->fetch_all(MYSQLI_ASSOC);
-  
-      // Organize the data into the desired structure
-      $formattedQuizData = [
-          'quiz_id' => $quizData[0]['quiz_id'],
-          'user_id' => $quizData[0]['user_id'],
-          'quiz_title' => $quizData[0]['quiz_title'],
-          'quiz_description' => $quizData[0]['quiz_description'],
-          'quiz_created_at' => $quizData[0]['quiz_created_at'],
-          'quiz_code' => $quizData[0]['quiz_code'],
-          'subject' => $quizData[0]['subject_name'],
-          'questions' => []
+    $stmt->bind_param("i", $quizId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $quizData = $result->fetch_all(MYSQLI_ASSOC);
+
+    // Organize the data into the desired structure
+    $formattedQuizData = [
+      'quiz_id' => $quizData[0]['quiz_id'],
+      'user_id' => $quizData[0]['user_id'],
+      'quiz_title' => $quizData[0]['quiz_title'],
+      'quiz_description' => $quizData[0]['quiz_description'],
+      'quiz_created_at' => $quizData[0]['quiz_created_at'],
+      'quiz_code' => $quizData[0]['quiz_code'],
+      'subject' => $quizData[0]['subject_name'],
+      'questions' => []
+    ];
+
+    foreach ($quizData as $row) {
+      $questionKey = 'question_' . $row['question_id'];
+      $formattedQuizData['questions'][$questionKey] = [
+        'question_text' => $row['question_text'],
+        'open_question' => $row['open_question'],
+        'options' => json_decode($row['options'], true)
       ];
-  
-      foreach ($quizData as $row) {
-          $questionKey = 'question_' . $row['question_id'];
-          $formattedQuizData['questions'][$questionKey] = [
-              'question_text' => $row['question_text'],
-              'open_question' => $row['open_question'],
-              'options' => json_decode($row['options'], true)
-          ];
-      }
-  
-      return $formattedQuizData;
+    }
+
+    return $formattedQuizData;
   }
-  
-  
+
+  function getListOfQuizzes($userId)
+  {
+    $stmt = $this->db->prepare("SELECT q.quiz_id, q.title, q.description, q.created_at, q.code, s.name  
+                                FROM quizzes q
+                                JOIN subjects s on s.subject_id = q.subject_id 
+                                WHERE user_id = ?");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $quizzes = array();
+    while ($row = $result->fetch_assoc()) {
+      $quizzes[] = $row;
+    }
+
+    return ['data' => $quizzes];
+  }
 
   function insertQuestion($quizId, $questionText, $isOpenQuestion)
   {

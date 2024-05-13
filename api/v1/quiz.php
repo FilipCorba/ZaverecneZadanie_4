@@ -37,18 +37,14 @@ switch ($lastUri) {
 
   case 'quiz':
     if ($method === 'GET') {
-      if (isset($_GET['quiz-id'])) {
         handleGetQuiz($dbHandler, $tokenHandler);
-      } else {
-        // handleGetListOfQuizzes();
-      }
     } else {
       handleInvalidRequestMethod();
     }
     break;
-  case 'quizes':
+  case 'quiz-list':
     if ($method === 'GET') {
-      handleGetListOfQuizzes($quizHandler, $tokenHandler);
+      handleGetListOfQuizzes($dbHandler, $tokenHandler);
     } else {
       handleInvalidRequestMethod();
     }
@@ -102,14 +98,37 @@ function handleGetQR($quizHandler)
   }
 }
 
-function handleGetListOfQuizzes($quizHandler, $tokenHandler)
+function handleGetListOfQuizzes($dbHandler, $tokenHandler)
 {
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  $quizList = $dbHandler->getListOfQuizzes($userId);
+
+  if ($quizList) {
+    $responseData = $quizList;
+  } else {
+    $responseData = [
+      'error' => 'Quizes not found',
+    ];
+    http_response_code(404);
+  }
+
+  echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
 function handleGetQuiz($dbHandler, $tokenHandler)
 {
   $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
-  // $user = getUserById($userId);
 
   $token = $tokenHandler->getTokenFromAuthorizationHeader();
   if (!$tokenHandler->isValidToken($token, $userId)) {
