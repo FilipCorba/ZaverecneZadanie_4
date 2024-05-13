@@ -12,7 +12,7 @@ class dbHandler
     $this->db = $db;
   }
 
-  private function insertQuiz($quizUser, $quizTitle, $quizDescription, $randomCode, $subjectId)
+  function insertQuiz($quizUser, $quizTitle, $quizDescription, $randomCode, $subjectId)
   {
     $stmt = $this->db->prepare("INSERT INTO quizzes (user_id, title, description, code, subject_id) VALUES (?, ?, ?, ?, ?)");
     $stmt->bind_param("isssi", $quizUser, $quizTitle, $quizDescription, $randomCode, $subjectId);
@@ -32,7 +32,7 @@ class dbHandler
   return $result->fetch_assoc();
 }
 
-private function insertQuestion($quizId, $questionText, $isOpenQuestion)
+function insertQuestion($quizId, $questionText, $isOpenQuestion)
 {
   $stmt = $this->db->prepare("INSERT INTO questions (quiz_id, question_text, open_question) VALUES (?, ?, ?)");
   $stmt->bind_param("iss", $quizId, $questionText, $isOpenQuestion);
@@ -42,7 +42,7 @@ private function insertQuestion($quizId, $questionText, $isOpenQuestion)
   return $questionId;
 }
 
-private function insertOption($questionId, $optionText, $isCorrect)
+function insertOption($questionId, $optionText, $isCorrect)
   {
     $stmt = $this->db->prepare("INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)");
     $stmt->bind_param("isi", $questionId, $optionText, $isCorrect);
@@ -50,7 +50,7 @@ private function insertOption($questionId, $optionText, $isCorrect)
     $stmt->close();
   }
 
-  private function verifyExistenceAndCreateSubject($subjectName)
+  function verifyExistenceAndCreateSubject($subjectName)
   {
     // Check if the subject already exists in the database
     $stmt = $this->db->prepare("SELECT subject_id FROM subjects WHERE name = ?");
@@ -73,7 +73,7 @@ private function insertOption($questionId, $optionText, $isCorrect)
     return $subjectId;
   }
 
-  private function checkCodeExists($randomCode)
+  function checkCodeExists($randomCode)
   {
     $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM quizzes WHERE code = ?");
     $stmt->bind_param("s", $randomCode);
