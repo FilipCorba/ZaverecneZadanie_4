@@ -38,19 +38,26 @@ switch ($lastUri) {
   case 'quiz':
     switch ($method) {
       case 'GET':
-          handleGetQuiz($dbHandler, $tokenHandler);
-          break;
+        handleGetQuiz($dbHandler, $tokenHandler);
+        break;
       case 'PUT':
-          if (isset($_GET['quiz-id']) && isset($_GET['user-id'])) {
-              handleQuizTitleChange($dbHandler, $tokenHandler);
-          } else {
-            handleInvalidRequestMethod();
-          }
-          break;
-      default:
+        if (isset($_GET['quiz-id']) && isset($_GET['user-id'])) {
+          handleQuizTitleChange($dbHandler, $tokenHandler);
+        } else {
           handleInvalidRequestMethod();
-          break;
-  }  
+        }
+        break;
+      case 'DELETE':
+        if (isset($_GET['quiz-id']) && isset($_GET['user-id'])) {
+        handleQuizDelete($dbHandler,$tokenHandler);
+      } else {
+        handleInvalidRequestMethod();
+      }
+      break;
+      default:
+        handleInvalidRequestMethod();
+        break;
+    }
     break;
   case 'quiz-list':
     if ($method === 'GET') {
@@ -237,7 +244,50 @@ function handleQuizTitleChange($dbHandler, $tokenHandler)
 
   echo json_encode($responseData);
 }
+ function handleQuizDelete($dbHandler,$tokenHandler){
+    // Get user ID from URL
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+  // Get token from authorization header
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
 
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  // Get quiz ID from URL
+  $quizId = isset($_GET['quiz-id']) ? $_GET['quiz-id'] : null;
+  // Check if quiz ID is provided
+  if (!$quizId) {
+    $responseData = [
+      'error' => 'Quiz ID not provided'
+    ];
+    http_response_code(400);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  // Delete the quiz
+  $success = $dbHandler->deleteQuiz($quizId);
+
+  if ($success) {
+    $responseData = [
+      'success' => 'Quiz deleted successfully'
+    ];
+    http_response_code(200);
+  } else {
+    $responseData = [
+      'error' => 'Failed to delete quiz'
+    ];
+    http_response_code(500);
+  }
+
+  echo json_encode($responseData);
+ }
 function handleInvalidEndpoint()
 {
   $responseData = [

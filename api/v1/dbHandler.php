@@ -31,7 +31,42 @@ class dbHandler
     return $success;
   }
 
-// TO DO change this so it only returns quiz if it belongs to the userId from request url
+  function deleteQuiz($quizId)
+  {
+    // Check if the quiz exists
+    if (!$this->quizExists($quizId)) {
+      return false; // Quiz does not exist
+  }
+
+    // First, delete associated questions
+    $stmt = $this->db->prepare("DELETE FROM questions WHERE quiz_id = ?");
+    $stmt->bind_param("i", $quizId);
+    $stmt->execute();
+    $stmt->close();
+
+    // Next, delete associated options
+    $stmt = $this->db->prepare("DELETE FROM options WHERE question_id NOT IN (SELECT question_id FROM questions)");
+    $stmt->execute();
+    $stmt->close();
+
+    // Then, delete the quiz itself
+    $stmt = $this->db->prepare("DELETE FROM quizzes WHERE quiz_id = ?");
+    $stmt->bind_param("i", $quizId);
+    $stmt->execute();
+    $stmt->close();
+
+    return true;
+  }
+ function quizExists($quizId)
+{
+    $stmt = $this->db->prepare("SELECT COUNT(*) AS count FROM quizzes WHERE quiz_id = ?");
+    $stmt->bind_param("i", $quizId);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    return ($result['count'] > 0);
+}
   
 function getQuizById($quizId)
   {
