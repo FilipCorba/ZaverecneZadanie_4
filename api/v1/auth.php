@@ -34,11 +34,28 @@ switch ($method) {
 
   case 'PUT':
     switch ($lastUri) {
-
       case 'role':
         handleRoleChange($tokenHandler);
         break;
-
+     
+      default:
+        handleInvalidEndpoint();
+        break;
+    }
+    break;
+  
+  case 'GET':
+    switch ($lastUri) {
+      case 'user':
+        if (isset($_GET['user-id'])) {
+          handleGetUser($tokenHandler);
+        } else {
+          // handleGetListOfQuizzes();
+        }
+        break;
+      case 'users':
+        handleGetUsers($tokenHandler);
+        break;
       default:
         handleInvalidEndpoint();
         break;
@@ -48,6 +65,65 @@ switch ($method) {
     handleInvalidRequestMethod();
     break;
 }
+
+function handleGetUser($tokenHandler)
+{
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  if ($userId != null) {
+    $userInfo = getUserById($userId);
+    if ($userInfo) {
+      $jsonResponse = json_encode([
+          'username' => $userInfo['name'],
+          'email' => $userInfo['mail'],
+          'role' => $userInfo['role']
+      ]);
+      echo $jsonResponse;
+    } else {
+      echo json_encode(['error' => 'Id is null']);
+    }
+  }
+  else{
+    echo json_encode(['error' => 'User not found']);
+  }
+}
+
+function handleGetUsers($tokenHandler)
+{
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isAdminToken($token)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+  $usersInfo = getUsers();
+  $users = [];
+  while ($row = $usersInfo->fetch_assoc()) {
+      $user = [
+          'user_id' => $row['user_id'],
+          'name' => $row['name'],
+          'mail' => $row['mail'],
+          'role' => $row['role']
+      ];
+      $users[] = $user;
+  }
+  $jsonResponse = json_encode($users);
+  echo $jsonResponse;
+}
+
 function handlePasswordChange()
 {
   $data = json_decode(file_get_contents('php://input'), true);
@@ -97,6 +173,15 @@ function getUserById($userId)
   $stmt->execute();
   $result = $stmt->get_result();
   return $result->fetch_assoc();
+  
+}
+
+function getUsers()
+{
+  global $db;
+  $stmt = $db->prepare("SELECT * FROM users");
+  $stmt->execute();
+  return $stmt->get_result();
 }
 
 function isPasswordChangeRequestValid($timestamp)
