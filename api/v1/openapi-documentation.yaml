@@ -153,6 +153,69 @@ paths:
                 properties:
                   error:
                     type: string
+  /auth.php/role:
+    put:
+      summary: Change user role to admin
+      description: |
+        Changes the role of a user to admin based on the provided user ID.
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 123
+          description: The ID of the user whose role will be changed to admin.
+      responses:
+        '200':
+          description: User role changed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                    example: User was successfully changed to admin.
+        '403':
+          description: Unauthorized token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Unauthorized token.
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: User not found.
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Internal server error.
+
+
+
+
+
+
+
+
   /quiz.php/generate-qr:
     post:
       tags:

@@ -2,10 +2,12 @@
 
 require_once 'config.php';
 require_once 'qr.php';
+require_once 'token.php';
 
 header('Content-Type: application/json');
 
 $qr = new QR($db);
+$tokenHandler = new Token();
 
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = strtok($_SERVER['REQUEST_URI'], '?');
@@ -14,7 +16,7 @@ $lastUri = basename($uri);
 switch ($lastUri) {
   case 'generate-qr':
     if ($method === 'POST') {
-      handleGenerateQR($qr);
+      handleGenerateQR($qr, $tokenHandler);
     } elseif ($method === 'GET') {
       handleGetQR($qr);
     } else {
@@ -27,13 +29,13 @@ switch ($lastUri) {
 }
 
 
-function handleGenerateQR($qr)
+function handleGenerateQR($qr, $tokenHandler)
 {
-  $token = getTokenFromAuthorizationHeader();
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
 
   $requestData = json_decode(file_get_contents('php://input'), true);
   $data = $requestData['data'];
-  if (!isValidToken($token, $data['user'])) {
+  if (!$tokenHandler->isValidToken($token, $data['user'])) {
     $responseData = [
       'error' => 'Unauthorized token'
     ];
@@ -86,39 +88,4 @@ function handleInvalidRequestMethod()
   ];
   http_response_code(400);
   echo json_encode($responseData);
-}
-
-function isValidToken($token, $userId)
-{
-  global $db;
-
-  // Prepare and execute query to check if the token is valid
-  $stmt = $db->prepare(
-    "SELECT COUNT(*) as count 
-    FROM tokens t 
-    JOIN users u on u.user_id = t.user_id 
-      WHERE t.token = ? 
-      AND (t.user_id = ? OR u.role = 'admin') 
-      AND t.expiration_timestamp > NOW()"
-  );
-  $stmt->bind_param("si", $token, $userId);
-  $stmt->execute();
-  $result = $stmt->get_result()->fetch_assoc();
-
-  // If count > 0, token is valid
-  return $result['count'] > 0;
-}
-
-
-function getTokenFromAuthorizationHeader()
-{
-  $headers = apache_request_headers();
-
-  if (isset($headers['Authorization'])) {
-    $authorizationHeader = $headers['Authorization'];
-    $token = str_replace('Bearer ', '', $authorizationHeader);
-    return $token;
-  }
-
-  return '';
 }

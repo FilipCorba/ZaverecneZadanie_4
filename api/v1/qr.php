@@ -36,7 +36,7 @@ class QR
     $writer = new PngWriter;
     $result = $writer->write($qrCode); // Write the QR code to a PNG image
 
-    // // Encode the image data to base64
+    // Encode the image data to base64
     $imageData = base64_encode($result->getString());
 
     $responseData = [
