@@ -1,12 +1,13 @@
 /*https://editor.swagger.io/*/
 openapi: 3.0.0
 info:
-  title: Your API Title
-  description: Description of your API
+  title: WEBTE final assignment API
   version: 1.0.0
 paths:
-  /login:
+  /auth.php/login:
     post:
+      tags:
+        - Auth
       summary: Handles user login
       requestBody:
         required: true
@@ -52,7 +53,7 @@ paths:
                 properties:
                   error:
                     type: string
-  /register:
+  /auth.php/register:
     post:
       summary: Handles user registration
       requestBody:
@@ -95,7 +96,7 @@ paths:
                 properties:
                   error:
                     type: string
-  /passwordChange:
+  /auth.php/passwordChange:
     post:
       summary: Handles password change
       requestBody:
@@ -152,3 +153,232 @@ paths:
                 properties:
                   error:
                     type: string
+  /auth.php/role:
+    put:
+      summary: Change user role to admin
+      description: |
+        Changes the role of a user to admin based on the provided user ID.
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 123
+          description: The ID of the user whose role will be changed to admin.
+      responses:
+        '200':
+          description: User role changed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                    example: User was successfully changed to admin.
+        '403':
+          description: Unauthorized token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Unauthorized token.
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: User not found.
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Internal server error.
+
+
+
+
+
+
+
+
+  /quiz.php/generate-qr:
+    post:
+      tags:
+        - Quiz
+      summary: Generate QR Code for Quiz
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    subject:
+                      type: string
+                    user_id:
+                      type: integer
+                    questions:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          question:
+                            type: string
+                          isOpenAnswer:
+                            type: boolean
+                          options:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                label:
+                                  type: string
+                                isCorrect:
+                                  type: boolean
+      responses:
+        '200':
+          description: QR Code generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                  qr_code:
+                    type: string
+    get:
+      summary: Get QR code by code
+      description: Retrieve QR code image based on the provided code.
+      parameters:
+        - in: query
+          name: code
+          required: true
+          description: The code to generate the QR code.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    format: binary
+                    description: Base64-encoded QR code image.
+                  qr_code:
+                    type: string
+                    description: Generated QR code URL.
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message indicating the reason for the bad request.
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message indicating that the QR code was not found.
+  quiz.php/quiz:
+    get:
+      summary: Get quiz by ID
+      description: Retrieve a quiz by its ID.
+      parameters:
+        - in: query
+          name: quizId
+          required: true
+          schema:
+            type: integer
+          description: The ID of the quiz to retrieve.
+          - in: query
+          name: userId
+          required: true
+          schema:
+            type: integer
+          description: The ID of the quiz to retrieve.
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          description: Token for authorization.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  quizId:
+                    type: integer
+                  title:
+                    type: string
+                  questions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        questionId:
+                          type: integer
+                        questionText:
+                          type: string
+                        options:
+                          type: array
+                          items:
+                            type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid request
+        '404':
+          description: Quiz not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Quiz not found

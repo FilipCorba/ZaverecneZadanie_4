@@ -1,6 +1,9 @@
 <?php
 
 require_once 'config.php';
+require_once 'token.php'; 
+
+$tokenHandler = new Token();
 
 $method = $_SERVER['REQUEST_METHOD'];
 header('Content-Type: application/json');
@@ -10,20 +13,37 @@ $lastUri = basename($uri);
 switch ($method) {
   case 'POST':
     switch ($lastUri) {
+
       case 'login':
-        handleLogin();
+        handleLogin($tokenHandler);
         break;
+
       case 'register':
-        handleRegistration();
+        handleRegistration($tokenHandler);
         break;
+
       case 'passwordChange':
         handlePasswordChange();
         break;
+
       default:
         handleInvalidEndpoint();
         break;
     }
     break;
+
+  case 'PUT':
+    switch ($lastUri) {
+
+      case 'role':
+        handleRoleChange($tokenHandler);
+        break;
+
+      default:
+        handleInvalidEndpoint();
+        break;
+    }
+    break; 
   default:
     handleInvalidRequestMethod();
     break;
@@ -32,17 +52,17 @@ function handlePasswordChange()
 {
   $data = json_decode(file_get_contents('php://input'), true);
   //timestamp-prvykrat overenie hesla,tak zacne odpocet a ak do 5 min nepride nove heslo,tak sa akcia nekona...404 zmeskane
-  $idUser = $data['user_id'];
+  $userId = $data['user_id'];
   $password = $data['password'];
   $newPassword = $data['new_password'];
 
-  $user = getUserById($idUser);
+  $user = getUserById($userId);
   if ($user) {
     if (isPasswordChangeRequestValid($user['password_change_timestamp'])) {
       if (password_verify($password, $user['password'])) {
         // Password verification successful, update the password
         $hashedNewPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        updateUserPassword($idUser, $hashedNewPassword);
+        updateUserPassword($userId, $hashedNewPassword);
 
         $responseData = [
           'success' => 'Password changed successfully',
@@ -75,17 +95,18 @@ function handlePasswordChange()
   }
 
   echo json_encode($responseData, JSON_PRETTY_PRINT);
-
 }
-function getUserById($idUser)
+
+function getUserById($userId)
 {
   global $db;
   $stmt = $db->prepare("SELECT * FROM users WHERE user_id = ?");
-  $stmt->bind_param("i", $idUser);
+  $stmt->bind_param("i", $userId);
   $stmt->execute();
   $result = $stmt->get_result();
   return $result->fetch_assoc();
 }
+
 function isPasswordChangeRequestValid($timestamp)
 {
   $allowedTimeframe = 5 * 60; // 5 minutes in seconds
@@ -96,17 +117,45 @@ function isPasswordChangeRequestValid($timestamp)
   return $timeDifference <= $allowedTimeframe;
 }
 
-function updateUserPassword($idUser, $newPassword)
+function updateUserPassword($userId, $newPassword)
 {
   global $db;
   $stmt = $db->prepare("UPDATE users SET password = ? WHERE user_id = ?");
-  $stmt->bind_param("si", $newPassword, $idUser);
+  $stmt->bind_param("si", $newPassword, $userId);
   $stmt->execute();
 }
 
+function handleRoleChange($tokenHandler)
+{
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isAdminToken($token)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
 
+  $userId = isset($_GET['userId']) ? $_GET['userId'] : null;
+  $user = getUserById($userId);
+  
+  if ($user) {
+    changeUserRoleToAdmin($userId);
+    $responseData = [
+      'success' => 'User was succesfully changed to admin',
+    ];
+  } else {
+    $responseData = [
+      'error' => 'User not found',
+    ];
+    http_response_code(404);
+  }
 
-function handleLogin()
+  echo json_encode($responseData, JSON_PRETTY_PRINT);
+}
+
+function handleLogin($tokenHandler)
 {
   $data = json_decode(file_get_contents('php://input'), true);
   $username = $data['username'];
@@ -117,8 +166,8 @@ function handleLogin()
   if ($user) {
     if (password_verify($password, $user['password'])) {
       // Generate token for the logged in user and save it into DB
-      $token = generateToken();
-      saveToken($token, $user['user_id']);
+      $token = $tokenHandler->generateToken();
+      $tokenHandler->saveToken($token, $user['user_id']);
 
       $responseData = [
         'success' => 'Login successful',
@@ -144,7 +193,7 @@ function handleLogin()
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
-function handleRegistration()
+function handleRegistration($tokenHandler)
 {
   $data = json_decode(file_get_contents('php://input'), true);
   $username = $data['username'];
@@ -169,8 +218,8 @@ function handleRegistration()
     $userId = insertUser($username, $password, $email);
 
     // Generate token for the registered user and save it into DB
-    $token = generateToken();
-    saveToken($token, $userId);
+    $token = $tokenHandler->generateToken();
+    $tokenHandler->saveToken($token, $userId);
 
     $responseData = [
       'success' => 'User ' . $username . ' registered successfully',
@@ -210,13 +259,11 @@ function insertUser($username, $password, $email)
   return $stmt->insert_id;
 }
 
-function saveToken($token, $userId)
+function changeUserRoleToAdmin($userId)
 {
   global $db;
-  date_default_timezone_set('Europe/Bratislava');
-  $expiration = date('Y-m-d H:i:s', strtotime('+1 day')); // Token expiration in 1 day
-  $stmt = $db->prepare("INSERT INTO tokens (token, user_id, expiration_timestamp) VALUES (?, ?, ?)");
-  $stmt->bind_param("sis", $token, $userId, $expiration);
+  $stmt = $db->prepare("UPDATE users SET role = 'admin' WHERE user_id = ?;");
+  $stmt->bind_param("i", $userId);
   $stmt->execute();
 }
 
@@ -236,9 +283,4 @@ function handleInvalidRequestMethod()
   ];
   http_response_code(400);
   echo json_encode($responseData);
-}
-
-function generateToken()
-{
-  return bin2hex(random_bytes(32)); // Generate a random token
 }

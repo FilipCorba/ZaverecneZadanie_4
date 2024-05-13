@@ -7,7 +7,7 @@ use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 
 
-class QR
+class QuizHandler
 {
   private $db;
 
@@ -16,16 +16,20 @@ class QR
     $this->db = $db;
   }
 
-
-
-  public function generateQrCode($quizData)
-  {
+  public function generateQrCodeAndInsertQuizData($quizData) {
     // Insert quiz data into the database
     do {
       $randomCode = $this->generateRandomCode(5);
       $codeExists = $this->checkCodeExists($randomCode);
     } while ($codeExists);
 
+    $responseData = $this->generateQrCode($randomCode);
+    $this->insertQuizData($quizData, $randomCode);
+    return $responseData;
+  }
+
+  public function generateQrCode($randomCode)
+  {
     $qrCodeUrl = 'https://node' . PERSONAL_CODE . '.webte.fei.stuba.sk/survey?code=' . $randomCode;
 
     $qrCode = QrCode::create($qrCodeUrl); // Create the QR code with the generated URL
@@ -35,13 +39,10 @@ class QR
     // Encode the image data to base64
     $imageData = base64_encode($result->getString());
 
-
     $responseData = [
       'image' => 'data:image/png;base64,' . $imageData, // Include the base64 encoded image data in the response
       'qr_code' => $qrCodeUrl, // Include the generated QR code URL in the response
     ];
-
-    $this->insertQuizData($quizData, $randomCode);
 
     return $responseData;
   }
@@ -50,7 +51,7 @@ class QR
   {
     $quizTitle = isset($quizData['title']) ? $quizData['title'] : "Quiz Title";
     $quizDescription = isset($quizData['description']) ? $quizData['description'] : "Quiz Description";
-    $quizUser = isset($quizData['user']) ? $quizData['user'] : "Quiz Title";
+    $quizUser = isset($quizData['user_id']) ? $quizData['user_id'] : "Quiz Title";
     $quizSubject = isset($quizData['subject']) ? $quizData['subject'] : "Quiz subject";
 
     $subjectId = $this->verifyExistenceAndCreateSubject($quizSubject);
@@ -84,6 +85,16 @@ class QR
     $stmt->close();
     return $quizId;
   }
+
+  function getQuizById($quizId)
+{
+  global $db;
+  $stmt = $db->prepare("SELECT * FROM quizzes WHERE quiz_id = ?");
+  $stmt->bind_param("i", $quizId);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  return $result->fetch_assoc();
+}
 
   private function insertQuestion($quizId, $questionText, $isOpenQuestion)
   {
