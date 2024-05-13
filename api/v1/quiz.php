@@ -1,5 +1,7 @@
 <?php
 
+
+global $db;
 require_once 'config.php';
 require_once 'qr.php';
 require_once 'token.php';
