@@ -22,9 +22,18 @@ class dbHandler
     return $quizId;
   }
 
+  function updateQuizTitle($quizId, $newTitle)
+  {
+    $stmt = $this->db->prepare("UPDATE quizzes SET title = ? WHERE quiz_id = ?");
+    $stmt->bind_param("si", $newTitle, $quizId);
+    $success = $stmt->execute();
+    $stmt->close();
+    return $success;
+  }
 
-  // TO DO change this so it only returns quiz if it belongs to the userId from request url
-  function getQuizById($quizId)
+// TO DO change this so it only returns quiz if it belongs to the userId from request url
+  
+function getQuizById($quizId)
   {
     global $db;
 
@@ -64,6 +73,11 @@ class dbHandler
     $result = $stmt->get_result();
 
     $quizData = $result->fetch_all(MYSQLI_ASSOC);
+
+    // Check if quiz data is empty
+    if (empty($quizData)) {
+      return null;
+    }
 
     // Organize the data into the desired structure
     $formattedQuizData = [
