@@ -96,7 +96,7 @@ paths:
                 properties:
                   error:
                     type: string
-  /auth.php/passwordChange:
+  /auth.php/password-change:
     post:
       summary: Handles password change
       requestBody:
@@ -106,16 +106,16 @@ paths:
             schema:
               type: object
               properties:
-                idUser:
+                user_id:
                   type: integer
                 password:
                   type: string
-                newPassword:
+                new_password:
                   type: string
               required:
-                - idUser
+                - user_id
                 - password
-                - newPassword
+                - new_password
       responses:
         '200':
           description: Successful password change

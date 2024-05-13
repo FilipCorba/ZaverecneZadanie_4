@@ -22,7 +22,7 @@ switch ($method) {
         handleRegistration($tokenHandler);
         break;
 
-      case 'passwordChange':
+      case 'password-change':
         handlePasswordChange();
         break;
 
