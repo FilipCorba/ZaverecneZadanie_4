@@ -43,7 +43,7 @@ switch ($lastUri) {
         // handleGetListOfQuizzes();
       }
     } elseif ($method === 'PUT') {
-      if (isset($_GET['quiz-id'])) {
+      if ((isset($_GET['quiz-id']))&& (isset($_GET['user-id'])) ){
         handleQuizTitleChange($dbHandler, $tokenHandler);
       } else {
         handleInvalidRequestMethod();
