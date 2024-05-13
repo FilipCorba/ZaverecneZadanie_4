@@ -52,9 +52,9 @@ function handlePasswordChange()
 {
   $data = json_decode(file_get_contents('php://input'), true);
   //timestamp-prvykrat overenie hesla,tak zacne odpocet a ak do 5 min nepride nove heslo,tak sa akcia nekona...404 zmeskane
-  $idUser = $data['idUser'];
+  $idUser = $data['user_id'];
   $password = $data['password'];
-  $newPassword = $data['newPassword'];
+  $newPassword = $data['new_password'];
 
   $user = getUserById($idUser);
   if ($user) {
