@@ -1,0 +1,135 @@
+openapi: 3.0.0
+info:
+  title: Quiz API
+  version: 1.0.0
+paths:
+  /generate-qr:
+    post:
+      summary: Generate QR Code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    user_id:
+                      type: integer
+                      description: User ID
+                    # Add other properties as needed
+                  required:
+                    - user_id
+      responses:
+        '200':
+          description: QR code generated successfully
+        '400':
+          description: Bad request
+        '403':
+          description: Unauthorized
+  /question:
+    put:
+      summary: Update Question (To be implemented)
+      responses:
+        '501':
+          description: Not implemented
+  /quiz:
+    get:
+      summary: Get Quiz by ID
+      parameters:
+        - in: query
+          name: user-id
+          schema:
+            type: integer
+          required: true
+        - in: query
+          name: quiz-id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Quiz data retrieved successfully
+        '400':
+          description: Bad request
+        '403':
+          description: Unauthorized
+        '404':
+          description: Quiz not found
+    put:
+      summary: Update Quiz Title
+      parameters:
+        - in: query
+          name: user-id
+          schema:
+            type: integer
+          required: true
+        - in: query
+          name: quiz-id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new-title:
+                  type: string
+                  description: New title for the quiz
+                  example: New Quiz Title
+      responses:
+        '200':
+          description: Quiz title updated successfully
+        '400':
+          description: Bad request
+        '403':
+          description: Unauthorized
+        '404':
+          description: Quiz not found
+        '500':
+          description: Failed to update quiz title
+    delete:
+      summary: Delete Quiz
+      parameters:
+        - in: query
+          name: user-id
+          schema:
+            type: integer
+          required: true
+        - in: query
+          name: quiz-id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Quiz deleted successfully
+        '400':
+          description: Bad request
+        '403':
+          description: Unauthorized
+        '500':
+          description: Failed to delete quiz
+  /quiz-list:
+    get:
+      summary: Get List of Quizzes
+      parameters:
+        - in: query
+          name: user-id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: List of quizzes retrieved successfully
+        '400':
+          description: Bad request
+        '403':
+          description: Unauthorized
+        '404':
+          description: Quizzes not found
