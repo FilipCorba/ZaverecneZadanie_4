@@ -3,6 +3,7 @@ info:
   title: WEBTE final assignment API
   version: 1.0.0
 paths:
+  # auth.php
   /auth.php/login:
     post:
       tags:
@@ -23,7 +24,7 @@ paths:
                 - username
                 - password
       responses:
-        '200':
+        "200":
           description: Successful login
           content:
             application/json:
@@ -43,15 +44,7 @@ paths:
                         type: string
                   token:
                     type: string
-        '400':
-          description: Invalid password or missing parameters
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
+
   /auth.php/register:
     post:
       summary: Handles user registration
@@ -73,7 +66,7 @@ paths:
                 - password
                 - email
       responses:
-        '200':
+        "200":
           description: Successful registration
           content:
             application/json:
@@ -86,15 +79,7 @@ paths:
                     type: integer
                   token:
                     type: string
-        '400':
-          description: Username or email already exists or missing parameters
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
+
   /auth.php/password-change:
     post:
       summary: Handles password change
@@ -116,7 +101,7 @@ paths:
                 - password
                 - new_password
       responses:
-        '200':
+        "200":
           description: Successful password change
           content:
             application/json:
@@ -134,24 +119,7 @@ paths:
                         type: string
                       email:
                         type: string
-        '400':
-          description: Invalid current password or missing parameters
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '404':
-          description: User not found or password change request expired
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
+
   /auth.php/role:
     put:
       summary: Change user role to admin
@@ -167,7 +135,7 @@ paths:
             example: 123
           description: The ID of the user whose role will be changed to admin.
       responses:
-        '200':
+        "200":
           description: User role changed successfully.
           content:
             application/json:
@@ -177,44 +145,8 @@ paths:
                   success:
                     type: string
                     example: User was successfully changed to admin.
-        '403':
-          description: Unauthorized token.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Unauthorized token.
-        '404':
-          description: User not found.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: User not found.
-        '500':
-          description: Internal server error.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Internal server error.
 
-
-
-
-
-
-
-
+  # quiz.php
   /quiz.php/generate-qr:
     post:
       tags:
@@ -257,7 +189,7 @@ paths:
                                 isCorrect:
                                   type: boolean
       responses:
-        '200':
+        "200":
           description: QR Code generated successfully
           content:
             application/json:
@@ -268,6 +200,7 @@ paths:
                     type: string
                   qr_code:
                     type: string
+
     get:
       summary: Get QR code by code
       description: Retrieve QR code image based on the provided code.
@@ -279,7 +212,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -293,26 +226,7 @@ paths:
                   qr_code:
                     type: string
                     description: Generated QR code URL.
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    description: Error message indicating the reason for the bad request.
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    description: Error message indicating that the QR code was not found.
+
   /quiz.php/quiz:
     get:
       summary: Get quiz details by ID
@@ -332,7 +246,7 @@ paths:
             type: integer
             format: int32
       responses:
-        '200':
+        "200":
           description: Successful response
           content:
             application/json:
@@ -379,3 +293,77 @@ paths:
                                 type: boolean
                               context:
                                 type: string
+    put:
+      summary: Update Quiz Title
+      parameters:
+        - name: quiz-id
+          in: query
+          schema:
+            type: string
+        - name: user-id
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new-title:
+                  type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+
+  /quiz.php/quiz-list:
+    get:
+      summary: Get a list of quizzes
+      description: Retrieves a list of quizzes for the specified user.
+      parameters:
+        - name: user-id
+          in: query
+          description: The ID of the user whose quizzes to retrieve
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: A list of quizzes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        quiz_id:
+                          type: integer
+                          description: The ID of the quiz
+                        title:
+                          type: string
+                          description: The title of the quiz
+                        description:
+                          type: string
+                          description: The description of the quiz
+                        created_at:
+                          type: string
+                          format: date-time
+                          description: The creation date and time of the quiz
+                        code:
+                          type: string
+                          description: The code of the quiz
+                        subject_id:
+                          type: integer
+                          description: The ID of the subject of the quiz

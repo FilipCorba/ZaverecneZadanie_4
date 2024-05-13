@@ -21,6 +21,7 @@ class dbHandler
     $stmt->close();
     return $quizId;
   }
+
   function updateQuizTitle($quizId, $newTitle)
   {
     $stmt = $this->db->prepare("UPDATE quizzes SET title = ? WHERE quiz_id = ?");
@@ -29,7 +30,10 @@ class dbHandler
     $stmt->close();
     return $success;
   }
-  function getQuizById($quizId)
+
+// TO DO change this so it only returns quiz if it belongs to the userId from request url
+  
+function getQuizById($quizId)
   {
     global $db;
 
@@ -99,7 +103,23 @@ class dbHandler
     return $formattedQuizData;
   }
 
+  function getListOfQuizzes($userId)
+  {
+    $stmt = $this->db->prepare("SELECT q.quiz_id, q.title, q.description, q.created_at, q.code, s.name  
+                                FROM quizzes q
+                                JOIN subjects s on s.subject_id = q.subject_id 
+                                WHERE user_id = ?");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
+    $quizzes = array();
+    while ($row = $result->fetch_assoc()) {
+      $quizzes[] = $row;
+    }
+
+    return ['data' => $quizzes];
+  }
 
   function insertQuestion($quizId, $questionText, $isOpenQuestion)
   {
