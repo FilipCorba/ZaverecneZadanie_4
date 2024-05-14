@@ -144,6 +144,6 @@ paths:
                 properties:
                   success:
                     type: string
-                    example: User was successfully changed to admin.
+                    example: Role was succesfully changed
 
  
