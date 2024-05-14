@@ -136,19 +136,22 @@ class dbHandler
     ];
 
     foreach ($quizData as $row) {
-      $questionKey = 'question_' . $row['question_id'];
-      $options = json_decode($row['options'], true);
+      if ($row['question_id'] !== null && $row['question_text'] !== null && $row['open_question'] !== null) {
+        $questionKey = 'question_' . $row['question_id'];
+        $options = json_decode($row['options'], true);
 
-      if ($options['option_id'] == null) {
-        $options = [];
+        if ($options['option_id'] == null) {
+          $options = [];
+        }
+
+        $formattedQuizData['questions'][$questionKey] = [
+          'question_text' => $row['question_text'],
+          'open_question' => $row['open_question'],
+          'options' => $options
+        ];
       }
-
-      $formattedQuizData['questions'][$questionKey] = [
-        'question_text' => $row['question_text'],
-        'open_question' => $row['open_question'],
-        'options' => $options
-      ];
     }
+
     return $quizData[0]['quiz_id'] != null ? $formattedQuizData : null;
   }
 
