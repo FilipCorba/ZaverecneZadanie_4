@@ -37,13 +37,13 @@ switch ($method) {
       case 'role':
         handleRoleChange($tokenHandler);
         break;
-     
+
       default:
         handleInvalidEndpoint();
         break;
     }
     break;
-  
+
   case 'GET':
     switch ($lastUri) {
       case 'user':
@@ -84,16 +84,15 @@ function handleGetUser($tokenHandler)
     $userInfo = getUserById($userId);
     if ($userInfo) {
       $jsonResponse = json_encode([
-          'username' => $userInfo['name'],
-          'email' => $userInfo['mail'],
-          'role' => $userInfo['role']
+        'username' => $userInfo['name'],
+        'email' => $userInfo['mail'],
+        'role' => $userInfo['role']
       ]);
       echo $jsonResponse;
     } else {
       echo json_encode(['error' => 'Id is null']);
     }
-  }
-  else{
+  } else {
     echo json_encode(['error' => 'User not found']);
   }
 }
@@ -112,13 +111,13 @@ function handleGetUsers($tokenHandler)
   $usersInfo = getUsers();
   $users = [];
   while ($row = $usersInfo->fetch_assoc()) {
-      $user = [
-          'user_id' => $row['user_id'],
-          'name' => $row['name'],
-          'mail' => $row['mail'],
-          'role' => $row['role']
-      ];
-      $users[] = $user;
+    $user = [
+      'user_id' => $row['user_id'],
+      'name' => $row['name'],
+      'mail' => $row['mail'],
+      'role' => $row['role']
+    ];
+    $users[] = $user;
   }
   $jsonResponse = json_encode($users);
   echo $jsonResponse;
@@ -165,25 +164,6 @@ function handlePasswordChange()
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
-function getUserById($userId)
-{
-  global $db;
-  $stmt = $db->prepare("SELECT * FROM users WHERE user_id = ?");
-  $stmt->bind_param("i", $userId);
-  $stmt->execute();
-  $result = $stmt->get_result();
-  return $result->fetch_assoc();
-  
-}
-
-function getUsers()
-{
-  global $db;
-  $stmt = $db->prepare("SELECT * FROM users");
-  $stmt->execute();
-  return $stmt->get_result();
-}
-
 function isPasswordChangeRequestValid($timestamp)
 {
   $allowedTimeframe = 5 * 60; // 5 minutes in seconds
@@ -192,14 +172,6 @@ function isPasswordChangeRequestValid($timestamp)
 
   // Check if the time difference is within the allowed timeframe
   return $timeDifference <= $allowedTimeframe;
-}
-
-function updateUserPassword($userId, $newPassword)
-{
-  global $db;
-  $stmt = $db->prepare("UPDATE users SET password = ? WHERE user_id = ?");
-  $stmt->bind_param("si", $newPassword, $userId);
-  $stmt->execute();
 }
 
 function handleRoleChange($tokenHandler)
@@ -215,18 +187,22 @@ function handleRoleChange($tokenHandler)
   }
 
   $userId = isset($_GET['userId']) ? $_GET['userId'] : null;
-  $user = getUserById($userId);
 
-  if ($user) {
-    changeUserRoleToAdmin($userId);
+  $role = getRole($userId);
+
+  $numberOfAdmins = getAdmins()->num_rows;
+
+  if ($role == 'admin' && $numberOfAdmins === 1) {
     $responseData = [
-      'success' => 'User was succesfully changed to admin',
+      'error' => 'Change of role was not successful, there is only one admin left.',
     ];
+    http_response_code(403);
   } else {
+    changeUserRole($userId);
+
     $responseData = [
-      'error' => 'User not found',
+      'success' => 'Role was successfully changed',
     ];
-    http_response_code(404);
   }
 
   echo json_encode($responseData, JSON_PRETTY_PRINT);
@@ -307,6 +283,29 @@ function handleRegistration($tokenHandler)
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
+function handleInvalidEndpoint()
+{
+  $responseData = [
+    'error' => 'Invalid endpoint'
+  ];
+  http_response_code(404);
+  echo json_encode($responseData);
+}
+
+function handleInvalidRequestMethod()
+{
+  $responseData = [
+    'error' => 'Invalid request method'
+  ];
+  http_response_code(400);
+  echo json_encode($responseData);
+}
+
+
+
+
+// DB calls
+
 function getUserByName($username)
 {
   global $db;
@@ -336,28 +335,61 @@ function insertUser($username, $password, $email)
   return $stmt->insert_id;
 }
 
-function changeUserRoleToAdmin($userId)
+function changeUserRole($userId)
 {
   global $db;
-  $stmt = $db->prepare("UPDATE users SET role = 'admin' WHERE user_id = ?;");
+  $stmt = $db->prepare("UPDATE users 
+                        SET role = (CASE 
+                          WHEN role = 'user' 
+                          THEN 'admin' 
+                          ELSE 'user' 
+                        END) 
+                          WHERE user_id = ?;");
   $stmt->bind_param("i", $userId);
   $stmt->execute();
 }
 
-function handleInvalidEndpoint()
+function getUserById($userId)
 {
-  $responseData = [
-    'error' => 'Invalid endpoint'
-  ];
-  http_response_code(404);
-  echo json_encode($responseData);
+  global $db;
+  $stmt = $db->prepare("SELECT * FROM users WHERE user_id = ?");
+  $stmt->bind_param("i", $userId);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  return $result->fetch_assoc();
 }
 
-function handleInvalidRequestMethod()
+function getAdmins()
 {
-  $responseData = [
-    'error' => 'Invalid request method'
-  ];
-  http_response_code(400);
-  echo json_encode($responseData);
+  global $db;
+  $stmt = $db->prepare("SELECT * FROM users where role = 'admin'");
+  $stmt->execute();
+  return $stmt->get_result();
+}
+
+function getUsers()
+{
+  global $db;
+  $stmt = $db->prepare("SELECT * FROM users");
+  $stmt->execute();
+  return $stmt->get_result();
+}
+
+function updateUserPassword($userId, $newPassword)
+{
+  global $db;
+  $stmt = $db->prepare("UPDATE users SET password = ? WHERE user_id = ?");
+  $stmt->bind_param("si", $newPassword, $userId);
+  $stmt->execute();
+}
+
+function getRole($userId)
+{
+    global $db;
+    $stmt = $db->prepare("SELECT role FROM users WHERE user_id = ?");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $roleData = $result->fetch_assoc();
+    return $roleData['role'];
 }
