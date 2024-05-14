@@ -228,6 +228,7 @@ function handleLogin($tokenHandler)
           'id' => $user['user_id'],
           'username' => $user['name'],
           'email' => $user['mail'],
+          'role' => $user['role'],
         ],
         'token' => $token
       ];
