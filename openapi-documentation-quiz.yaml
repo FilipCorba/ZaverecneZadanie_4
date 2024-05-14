@@ -18,59 +18,87 @@ paths:
                   properties:
                     user_id:
                       type: integer
-                      description: User ID
-                    # Add other properties as needed
-                  required:
-                    - user_id
       responses:
         '200':
-          description: QR code generated successfully
+          description: QR Code generated successfully
+        '400':
+          description: Bad request
+
+  /question/{user-id}{quiz-id}{question-id}:
+    delete:
+      summary: Delete a question from a quiz
+      parameters:
+        - name: user-id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The ID of the user
+        - name: quiz-id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The ID of the quiz containing the question
+        - name: question-id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The ID of the question to be deleted
+      responses:
+        '200':
+          description: Question deleted successfully
         '400':
           description: Bad request
         '403':
           description: Unauthorized
-  /question:
-    put:
-      summary: Update Question (To be implemented)
-      responses:
-        '501':
-          description: Not implemented
-  /quiz:
+        '404':
+          description: Question or quiz not found
+        '500':
+          description: Internal server error
+
+  /quiz/{user-id}{quiz-id}:
     get:
-      summary: Get Quiz by ID
+      summary: Get quiz by ID
       parameters:
-        - in: query
-          name: user-id
+        - name: user-id
+          in: path
+          required: true
           schema:
             type: integer
+          description: The ID of the user
+        - name: quiz-id
+          in: path
           required: true
-        - in: query
-          name: quiz-id
           schema:
             type: integer
-          required: true
+          description: The ID of the quiz to retrieve
       responses:
         '200':
-          description: Quiz data retrieved successfully
+          description: Quiz retrieved successfully
         '400':
           description: Bad request
         '403':
           description: Unauthorized
         '404':
           description: Quiz not found
+
     put:
-      summary: Update Quiz Title
+      summary: Update quiz title
       parameters:
-        - in: query
-          name: user-id
+        - name: user-id
+          in: path
+          required: true
           schema:
             type: integer
+          description: The ID of the user
+        - name: quiz-id
+          in: path
           required: true
-        - in: query
-          name: quiz-id
           schema:
             type: integer
-          required: true
+          description: The ID of the quiz to update
       requestBody:
         required: true
         content:
@@ -80,8 +108,7 @@ paths:
               properties:
                 new-title:
                   type: string
-                  description: New title for the quiz
-                  example: New Quiz Title
+                  description: The new title for the quiz
       responses:
         '200':
           description: Quiz title updated successfully
@@ -92,20 +119,24 @@ paths:
         '404':
           description: Quiz not found
         '500':
-          description: Failed to update quiz title
+          description: Internal server error
+
+  
     delete:
-      summary: Delete Quiz
+      summary: Delete a quiz
       parameters:
-        - in: query
-          name: user-id
+        - name: user-id
+          in: path
+          required: true
           schema:
             type: integer
+          description: The ID of the user
+        - name: quiz-id
+          in: path
           required: true
-        - in: query
-          name: quiz-id
           schema:
             type: integer
-          required: true
+          description: The ID of the quiz to delete
       responses:
         '200':
           description: Quiz deleted successfully
@@ -113,20 +144,24 @@ paths:
           description: Bad request
         '403':
           description: Unauthorized
+        '404':
+          description: Quiz not found
         '500':
-          description: Failed to delete quiz
-  /quiz-list:
+          description: Internal server error
+
+  /quiz-list/{user-id}:
     get:
-      summary: Get List of Quizzes
+      summary: Get list of quizzes for a user
       parameters:
-        - in: query
-          name: user-id
+        - name: user-id
+          in: path
+          required: true
           schema:
             type: integer
-          required: true
+          description: The ID of the user
       responses:
         '200':
-          description: List of quizzes retrieved successfully
+          description: Quiz list retrieved successfully
         '400':
           description: Bad request
         '403':
