@@ -165,7 +165,15 @@ function getQuizById($quizId)
     $stmt->close();
     return $questionId;
   }
+  function deleteQuestion($quizId, $questionId){
+    $stmt = $this->db->prepare("DELETE FROM questions WHERE quiz_id = ? AND question_id = ?");
+    $stmt->bind_param("ii", $quizId, $questionId);
+    $stmt->execute();
+    $affectedRows = $stmt->affected_rows;
+    $stmt->close();
 
+    return $affectedRows > 0; // Return true if rows were affected (deletion successful), false otherwise
+}
   function insertOption($questionId, $optionText, $isCorrect)
   {
     $stmt = $this->db->prepare("INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)");

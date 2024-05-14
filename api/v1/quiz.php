@@ -30,6 +30,12 @@ switch ($lastUri) {
   case 'question':
     if ($method === 'PUT') {
       // handleQuestionChange($tokenHandler);
+    } elseif ($method === 'DELETE') {
+      if (isset($_GET['user-id']) && isset($_GET['quiz-id']) && isset($_GET['question-id'])) {
+        handleQuestionDelete($dbHandler, $tokenHandler);
+      } else {
+        handleInvalidRequestMethod();
+      }
     } else {
       handleInvalidRequestMethod();
     }
@@ -49,11 +55,11 @@ switch ($lastUri) {
         break;
       case 'DELETE':
         if (isset($_GET['quiz-id']) && isset($_GET['user-id'])) {
-        handleQuizDelete($dbHandler,$tokenHandler);
-      } else {
-        handleInvalidRequestMethod();
-      }
-      break;
+          handleQuizDelete($dbHandler, $tokenHandler);
+        } else {
+          handleInvalidRequestMethod();
+        }
+        break;
       default:
         handleInvalidRequestMethod();
         break;
@@ -175,6 +181,63 @@ function handleQuestionChange($dbHandler)
 {
 
 }
+function handleQuestionDelete($dbHandler, $tokenHandler)
+{
+  // Get user ID from URL
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+  // Get token from authorization header
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  // Get quiz ID from URL
+  $quizId = isset($_GET['quiz-id']) ? $_GET['quiz-id'] : null;
+  // Check if quiz ID is provided
+  if (!$quizId) {
+    $responseData = [
+      'error' => 'Quiz ID not provided'
+    ];
+    http_response_code(400);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  $questionId = isset($_GET['question-id']) ? $_GET['question-id'] : null;
+
+  // Check if new title is provided
+  if (!$questionId) {
+    $responseData = [
+      'error' => 'Question id not provided'
+    ];
+    http_response_code(400);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  // Delete the question
+  $success = $dbHandler->deleteQuestion($quizId, $questionId);
+
+  if ($success) {
+    $responseData = [
+      'success' => 'Question deleted successfully'
+    ];
+    http_response_code(200);
+  } else {
+    $responseData = [
+      'error' => 'Failed to delete question'
+    ];
+    http_response_code(500);
+  }
+  echo json_encode($responseData);
+}
+
 function handleQuizTitleChange($dbHandler, $tokenHandler)
 {
   // Get user ID from URL
@@ -244,8 +307,9 @@ function handleQuizTitleChange($dbHandler, $tokenHandler)
 
   echo json_encode($responseData);
 }
- function handleQuizDelete($dbHandler,$tokenHandler){
-    // Get user ID from URL
+function handleQuizDelete($dbHandler, $tokenHandler)
+{
+  // Get user ID from URL
   $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
   // Get token from authorization header
   $token = $tokenHandler->getTokenFromAuthorizationHeader();
@@ -287,7 +351,7 @@ function handleQuizTitleChange($dbHandler, $tokenHandler)
   }
 
   echo json_encode($responseData);
- }
+}
 function handleInvalidEndpoint()
 {
   $responseData = [
