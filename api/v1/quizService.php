@@ -21,7 +21,7 @@ class QuizHandler
     // Insert quiz data into the database
     do {
       $randomCode = $this->generateRandomCode(5);
-      $codeExists = $this->dbHandler->checkCodeExists($randomCode);
+      $codeExists = $this->dbHandler->checkIfQuizCodeExists($randomCode);
     } while ($codeExists);
 
     $responseData = $this->generateQrCode($randomCode);
