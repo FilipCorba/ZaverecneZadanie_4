@@ -25,7 +25,6 @@ class QuizHandler
     $qrCodeUrl = 'https://node' . PERSONAL_CODE . '.webte.fei.stuba.sk/survey?code=' . $randomCode['code'];
 
     $qrCode = QrCode::create($qrCodeUrl)
-      ->setMargin(10)
       ->setRoundBlockSizeMode(RoundBlockSizeMode::Margin)
       ->setForegroundColor(new Color(230, 73, 25));
     $writer = new PngWriter;
