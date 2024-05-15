@@ -39,7 +39,7 @@ class QuizHandler
       'qr_code' => $qrCodeUrl, // Include the generated QR code URL in the response
       'code' => $randomCode['code']
     ];
-
+ 
     return $responseData;
   }
 
