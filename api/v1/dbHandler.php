@@ -156,6 +156,25 @@ function getQuizById($quizId)
     return ['data' => $quizzes];
   }
 
+  function getListOfSubjects($userId)
+  {
+    $stmt = $this->db->prepare("SELECT DISTINCT s.name  
+                                FROM quizzes q
+                                JOIN subjects s on s.subject_id = q.subject_id 
+                                WHERE user_id = ?");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $subjects = array();
+    while ($row = $result->fetch_assoc()) {
+        $subjects[] = $row;
+    }
+
+    // Encode the array as JSON
+    return json_encode($subjects);
+  }
+
   function insertQuestion($quizId, $questionText, $isOpenQuestion)
   {
     $stmt = $this->db->prepare("INSERT INTO questions (quiz_id, question_text, open_question) VALUES (?, ?, ?)");
