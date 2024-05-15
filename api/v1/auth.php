@@ -56,6 +56,9 @@ switch ($method) {
       case 'users':
         handleGetUsers($tokenHandler);
         break;
+      case 'admins':
+        handleGetAdmins($tokenHandler);
+        break;
       default:
         handleInvalidEndpoint();
         break;
@@ -120,6 +123,32 @@ function handleGetUsers($tokenHandler)
     $users[] = $user;
   }
   $jsonResponse = json_encode($users);
+  echo $jsonResponse;
+}
+
+function handleGetAdmins($tokenHandler)
+{
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isAdminToken($token)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+  $adminsInfo = getAdmins();
+  $admins = [];
+  while ($row = $adminsInfo->fetch_assoc()) {
+    $admin = [
+      'user_id' => $row['user_id'],
+      'name' => $row['name'],
+      'mail' => $row['mail'],
+      'role' => $row['role']
+    ];
+    $admins[] = $admin;
+  }
+  $jsonResponse = json_encode($admins);
   echo $jsonResponse;
 }
 

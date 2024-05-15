@@ -72,7 +72,13 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
-
+  case 'subjects':
+    if ($method === 'GET') {
+      handleGetListOfSubjects($tokenHandler, $dbHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
   case 'start-vote':
     if ($method === 'POST') {
       handleStartVote($dbHandler, $tokenHandler);
@@ -166,6 +172,24 @@ function handleGetListOfQuizzes($dbHandler, $tokenHandler)
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
+
+function handleGetListOfSubjects($tokenHandler, $dbHandler)
+{
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+  
+  echo $dbHandler->getListOfSubjects($userId);
+
+}
 function handleGetQuiz($dbHandler, $tokenHandler)
 {
   $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
