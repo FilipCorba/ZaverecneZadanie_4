@@ -57,3 +57,49 @@ paths:
               schema:
                 type: integer
                 example: 1
+
+  /vote:
+    post:
+      summary: Submit votes for a participation ID
+      description: |
+        This endpoint allows users to submit votes for a given participation ID.
+        Votes are submitted as answers to questions.
+      parameters:
+        - in: query
+          name: user-id
+          description: The ID of the user submitting the votes
+          schema:
+            type: integer
+            format: int64
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                participation_id:
+                  type: integer
+                  format: int64
+                  description: The ID of the participation to submit votes for.
+                  example: 123
+                questions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      question_id:
+                        type: integer
+                        format: int64
+                        description: The ID of the question.
+                        example: 456
+                      answers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            answer_text:
+                              type: string
+                              description: The text of the answer.
+                              example: "Option A"
