@@ -32,7 +32,7 @@ class QuizHandler
     $responseData = [
       'image' => 'data:image/png;base64,' . $imageData, // Include the base64 encoded image data in the response
       'qr_code' => $qrCodeUrl, // Include the generated QR code URL in the response
-      'code' => $randomCode
+      'code' => $randomCode['code']
     ];
 
     return $responseData;
