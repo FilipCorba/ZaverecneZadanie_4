@@ -154,10 +154,22 @@ class dbHandler
 
   function getListOfQuizzes($userId)
   {
-    $stmt = $this->db->prepare("SELECT q.quiz_id, q.title, q.description, q.created_at, s.name  
+    $stmt = $this->db->prepare("SELECT q.quiz_id, 
+                                    q.title, 
+                                    q.description, 
+                                    q.created_at, 
+                                    s.name,
+                                    COUNT(questions.question_id) AS number_of_questions,
+                                    CASE 
+                                        WHEN COUNT(qp.participation_id) > 0 THEN true
+                                        ELSE false
+                                    END AS is_active 
                                 FROM quizzes q
-                                JOIN subjects s on s.subject_id = q.subject_id 
-                                WHERE user_id = ?");
+                                JOIN subjects s ON s.subject_id = q.subject_id 
+                                LEFT JOIN quiz_participation qp ON qp.quiz_id = q.quiz_id 
+                                LEFT JOIN questions ON questions.quiz_id = q.quiz_id 
+                                WHERE user_id = ? 
+                                GROUP BY q.quiz_id, q.title, q.description, q.created_at, s.name;");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -204,7 +216,8 @@ class dbHandler
 
 
   // VOTING
-  function getCode($participationId) {
+  function getCode($participationId)
+  {
     $stmt = $this->db->prepare("SELECT code FROM quiz_participation WHERE participation_id = ?");
     $stmt->bind_param("i", $participationId);
     $stmt->execute();
@@ -229,26 +242,26 @@ class dbHandler
   // in what format should total_time_taken be
   function endVote($note, $participationId)
   {
-      $stmt = $this->db->prepare("UPDATE quiz_participation 
+    $stmt = $this->db->prepare("UPDATE quiz_participation 
               SET end_time = NOW(),
                   total_time_taken = SEC_TO_TIME(TIMESTAMPDIFF(MINUTE, start_time, NOW())),
                   note = ?
               WHERE participation_id = ? AND end_time IS NULL"); // Changed the condition to check for NULL
-      $stmt->bind_param("si", $note, $participationId);
-      $stmt->execute();
-      $rowsUpdated = $stmt->affected_rows; // Get the number of updated rows
-      $stmt->close();
-      return $rowsUpdated == 1;
-  }  
-  
+    $stmt->bind_param("si", $note, $participationId);
+    $stmt->execute();
+    $rowsUpdated = $stmt->affected_rows; // Get the number of updated rows
+    $stmt->close();
+    return $rowsUpdated == 1;
+  }
+
 
   function sendVote($questionId, $participationId, $answerText)
   {
-      $stmt = $this->db->prepare("INSERT INTO answers (question_id, participation_id, answer_text) VALUES (?, ?, ?)");
-      $stmt->bind_param("iis", $questionId, $participationId, $answerText);
-      $stmt->execute();
-      $stmt->close();
-  }  
+    $stmt = $this->db->prepare("INSERT INTO answers (question_id, participation_id, answer_text) VALUES (?, ?, ?)");
+    $stmt->bind_param("iis", $questionId, $participationId, $answerText);
+    $stmt->execute();
+    $stmt->close();
+  }
 
 
   function doesParticipationExist($participationId)
@@ -287,7 +300,7 @@ class dbHandler
   }
 
   // QUESTION - OPTION
-  function insertOption($questionId, $optionText, $isCorrect, )
+  function insertOption($questionId, $optionText, $isCorrect,)
   {
     $stmt = $this->db->prepare("INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)");
     $stmt->bind_param("isi", $questionId, $optionText, $isCorrect);
