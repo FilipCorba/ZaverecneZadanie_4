@@ -72,6 +72,23 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
+
+  case 'start-vote':
+    if ($method === 'POST') {
+      handleStartVote($dbHandler, $tokenHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
+  case 'end-vote':
+    if ($method === 'POST') {
+      handleEndVote($dbHandler, $tokenHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
+  case 'vote':
+    // handleSendAnswer();
   default:
     handleInvalidEndpoint();
     break;
@@ -164,7 +181,7 @@ function handleGetQuiz($dbHandler, $tokenHandler)
   }
 
   $quizId = isset($_GET['quiz-id']) ? $_GET['quiz-id'] : null;
-  $quiz = $dbHandler->getQuizById($quizId);
+  $quiz = $dbHandler->getQuizById($quizId, $userId);
 
   if ($quiz) {
     $responseData = $quiz;
@@ -177,10 +194,7 @@ function handleGetQuiz($dbHandler, $tokenHandler)
 
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
-function handleQuestionChange($dbHandler)
-{
 
-}
 function handleQuestionDelete($dbHandler, $tokenHandler)
 {
   // Get user ID from URL
@@ -285,9 +299,7 @@ function handleQuizTitleChange($dbHandler, $tokenHandler)
 
   if ($success) {
     // Get quiz by ID
-    $quiz = $dbHandler->getQuizById($quizId);
-
-    if ($quiz) {
+    if ($dbHandler->quizExists($quizId, $userId)) {
       $responseData = [
         'success' => 'Quiz title update successful',
       ];
@@ -307,6 +319,7 @@ function handleQuizTitleChange($dbHandler, $tokenHandler)
 
   echo json_encode($responseData);
 }
+
 function handleQuizDelete($dbHandler, $tokenHandler)
 {
   // Get user ID from URL
@@ -336,7 +349,7 @@ function handleQuizDelete($dbHandler, $tokenHandler)
   }
 
   // Delete the quiz
-  $success = $dbHandler->deleteQuiz($quizId);
+  $success = $dbHandler->deleteQuiz($quizId, $userId);
 
   if ($success) {
     $responseData = [
@@ -352,6 +365,69 @@ function handleQuizDelete($dbHandler, $tokenHandler)
 
   echo json_encode($responseData);
 }
+
+function handleStartVote($dbHandler, $tokenHandler)
+{
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  $quizId = isset($_GET['quiz-id']) ? $_GET['quiz-id'] : null;
+
+  if ($dbHandler->quizExists($quizId, $userId)) {
+    $responseData = $dbHandler->startVote($quizId);
+  } else {
+    $responseData = [
+      'error' => 'Quiz not found',
+    ];
+    http_response_code(404);
+  }
+
+  echo json_encode($responseData, JSON_PRETTY_PRINT);
+}
+
+function handleEndVote($dbHandler, $tokenHandler)
+{
+    $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+
+    $token = $tokenHandler->getTokenFromAuthorizationHeader();
+    if (!$tokenHandler->isValidToken($token, $userId)) {
+        $responseData = [
+            'error' => 'Unauthorized token'
+        ];
+        http_response_code(403);
+        echo json_encode($responseData);
+        exit;
+    }
+
+    $json = file_get_contents('php://input');
+    $requestData = json_decode($json, true);
+
+    $note = isset($requestData['note']) ? $requestData['note'] : null;
+    $participationId = isset($requestData['participation_id']) ? $requestData['participation_id'] : null;
+
+    $quizParticipation = $dbHandler->doesParticipationExist($participationId);
+
+    if ($quizParticipation) {
+        $responseData = $dbHandler->endVote($note, $participationId);
+    } else {
+        $responseData = [
+            'error' => 'Voting with given ID doesnt exist',
+        ];
+        http_response_code(404);
+    }
+    echo json_encode($responseData, JSON_PRETTY_PRINT);
+}
+
+
 function handleInvalidEndpoint()
 {
   $responseData = [
