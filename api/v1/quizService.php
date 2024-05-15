@@ -3,6 +3,7 @@
 require "vendor/autoload.php";
 require "dbHandler.php";
 
+use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 
@@ -22,7 +23,8 @@ class QuizHandler
     $randomCode = $this->dbHandler->getCode($participationId);
     $qrCodeUrl = 'https://node' . PERSONAL_CODE . '.webte.fei.stuba.sk/survey?code=' . $randomCode;
 
-    $qrCode = QrCode::create($qrCodeUrl); // Create the QR code with the generated URL
+    $qrCode = QrCode::create($qrCodeUrl)
+                    ->setForegroundColor(new Color(66, 135, 245));
     $writer = new PngWriter;
     $result = $writer->write($qrCode); // Write the QR code to a PNG image
 
