@@ -273,3 +273,27 @@ paths:
                         subject_id:
                           type: integer
                           description: The ID of the subject of the quiz
+  /subjects:
+    get:
+      summary: Get subjects by user ID
+      description: Retrieves subjects associated with a user by their ID.
+      parameters:
+        - in: query
+          name: user-id
+          required: true
+          schema:
+            type: integer
+            example: 1
+          description: The ID of the user to retrieve subjects for.
+      responses:
+        "200":
+          description: Successful retrieval of subjects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string                        
