@@ -50,7 +50,7 @@ switch ($method) {
         if (isset($_GET['user-id'])) {
           handleGetUser($tokenHandler);
         } else {
-          // handleGetListOfQuizzes();
+          handleInvalidEndpoint();
         }
         break;
       case 'users':
