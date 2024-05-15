@@ -17,15 +17,6 @@ class QuizHandler
     $this->dbHandler = new dbHandler($db);
   }
 
-  public function generateQrCodeAndInsertQuizData($quizData) {
-
-    $quizId = $this->insertQuizData($quizData);
-    $responseData = [
-      'quiz_id' => $quizId
-    ];
-    return $responseData;
-  }
-
   public function generateQrCode($participationId)
   {
     $randomCode = $this->dbHandler->getCode($participationId);
@@ -47,7 +38,7 @@ class QuizHandler
     return $responseData;
   }
 
-  private function insertQuizData($quizData)
+  function insertQuizData($quizData)
   {
     $quizTitle = isset($quizData['title']) ? $quizData['title'] : "Quiz Title";
     $quizDescription = isset($quizData['description']) ? $quizData['description'] : "Quiz Description";
@@ -72,7 +63,11 @@ class QuizHandler
       }
     }
 
-    return $quizId;
+    $responseData = [
+      'quiz_id' => $quizId
+    ];
+
+    return $responseData;
   }
 
   public function generateRandomCode($length)
