@@ -415,11 +415,11 @@ function updateUserPassword($userId, $newPassword)
 
 function getRole($userId)
 {
-    global $db;
-    $stmt = $db->prepare("SELECT role FROM users WHERE user_id = ?");
-    $stmt->bind_param("i", $userId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $roleData = $result->fetch_assoc();
-    return $roleData['role'];
+  global $db;
+  $stmt = $db->prepare("SELECT role FROM users WHERE user_id = ?");
+  $stmt->bind_param("i", $userId);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $roleData = $result->fetch_assoc();
+  return $roleData['role'];
 }

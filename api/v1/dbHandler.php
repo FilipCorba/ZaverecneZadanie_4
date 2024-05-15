@@ -12,6 +12,8 @@ class dbHandler
     $this->db = $db;
   }
 
+
+  // QUIZ
   function insertQuiz($quizUser, $quizTitle, $quizDescription, $randomCode, $subjectId)
   {
     $stmt = $this->db->prepare("INSERT INTO quizzes (user_id, title, description, code, subject_id) VALUES (?, ?, ?, ?, ?)");
@@ -31,12 +33,12 @@ class dbHandler
     return $success;
   }
 
-  function deleteQuiz($quizId)
+  function deleteQuiz($quizId, $userId)
   {
     // Check if the quiz exists
-    if (!$this->quizExists($quizId)) {
+    if (!$this->quizExists($quizId, $userId)) {
       return false; // Quiz does not exist
-  }
+    }
 
     // First, delete associated questions
     $stmt = $this->db->prepare("DELETE FROM questions WHERE quiz_id = ?");
@@ -57,62 +59,69 @@ class dbHandler
 
     return true;
   }
- function quizExists($quizId)
-{
-    $stmt = $this->db->prepare("SELECT COUNT(*) AS count FROM quizzes WHERE quiz_id = ?");
-    $stmt->bind_param("i", $quizId);
+
+  function quizExists($quizId, $userId)
+  {
+    $stmt = $this->db->prepare("SELECT COUNT(*) AS count FROM quizzes WHERE quiz_id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $quizId, $userId);
     $stmt->execute();
     $result = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
     return ($result['count'] > 0);
-}
-  
-function getQuizById($quizId)
+  }
+
+  function getQuizById($quizId, $userId)
   {
     global $db;
 
     $stmt = $db->prepare("SELECT 
-                              quizzes.quiz_id,
-                              quizzes.user_id,
-                              quizzes.title AS quiz_title,
-                              quizzes.description AS quiz_description,
-                              quizzes.created_at AS quiz_created_at,
-                              quizzes.code AS quiz_code,
-                              questions.question_id,
-                              questions.question_text,
-                              questions.open_question,
-                              JSON_ARRAYAGG(
-                                  JSON_OBJECT(
-                                      'option_id', o.option_id,
-                                      'option_text', o.option_text,
-                                      'is_correct', o.is_correct,
-                                      'option_text', o.option_text
-                                  )
-                              ) AS options,
-                              s.name AS subject_name
-                            FROM 
-                              quizzes 
-                            JOIN 
-                              questions ON questions.quiz_id = quizzes.quiz_id 
-                            JOIN 
-                              options o ON o.question_id = questions.question_id 
-                            JOIN 
-                              subjects s ON s.subject_id = quizzes.subject_id 
-                            WHERE 
-                              quizzes.quiz_id = ?
-                            GROUP BY 
-                              questions.question_id;");
-    $stmt->bind_param("i", $quizId);
+                            quizzes.quiz_id,
+                            quizzes.user_id,
+                            quizzes.title AS quiz_title,
+                            quizzes.description AS quiz_description,
+                            quizzes.created_at AS quiz_created_at,
+                            quizzes.code AS quiz_code, 
+                            questions.question_id,
+                            questions.question_text,
+                            questions.open_question,
+                            CASE
+                                WHEN questions.open_question = 1 THEN NULL
+                                ELSE JSON_ARRAYAGG(
+                                    JSON_OBJECT(
+                                        'option_id', o.option_id,
+                                        'option_text', o.option_text,
+                                        'is_correct', o.is_correct
+                                    )
+                                )
+                            END AS options,
+                            s.name AS subject_name
+                        FROM 
+                            quizzes 
+                        LEFT JOIN 
+                            questions ON questions.quiz_id = quizzes.quiz_id 
+                        LEFT JOIN 
+                            options o ON o.question_id = questions.question_id 
+                        JOIN 
+                            subjects s ON s.subject_id = quizzes.subject_id 
+                        WHERE 
+                            quizzes.quiz_id = ? AND quizzes.user_id = ? 
+                        GROUP BY 
+                            quizzes.quiz_id,
+                            quizzes.user_id,
+                            quizzes.title,
+                            quizzes.description,
+                            quizzes.created_at,
+                            quizzes.code,
+                            questions.question_id,
+                            questions.question_text,
+                            questions.open_question,
+                            s.name;");
+    $stmt->bind_param("ii", $quizId, $userId);
     $stmt->execute();
     $result = $stmt->get_result();
 
     $quizData = $result->fetch_all(MYSQLI_ASSOC);
-
-    // Check if quiz data is empty
-    if (empty($quizData)) {
-      return null;
-    }
 
     // Organize the data into the desired structure
     $formattedQuizData = [
@@ -127,15 +136,23 @@ function getQuizById($quizId)
     ];
 
     foreach ($quizData as $row) {
-      $questionKey = 'question_' . $row['question_id'];
-      $formattedQuizData['questions'][$questionKey] = [
-        'question_text' => $row['question_text'],
-        'open_question' => $row['open_question'],
-        'options' => json_decode($row['options'], true)
-      ];
+      if ($row['question_id'] !== null && $row['question_text'] !== null && $row['open_question'] !== null) {
+        $questionKey = 'question_' . $row['question_id'];
+        $options = json_decode($row['options'], true);
+
+        if ($options['option_id'] == null) {
+          $options = [];
+        }
+
+        $formattedQuizData['questions'][$questionKey] = [
+          'question_text' => $row['question_text'],
+          'open_question' => $row['open_question'],
+          'options' => $options
+        ];
+      }
     }
 
-    return $formattedQuizData;
+    return $quizData[0]['quiz_id'] != null ? $formattedQuizData : null;
   }
 
   function getListOfQuizzes($userId)
@@ -175,6 +192,61 @@ function getQuizById($quizId)
     return json_encode($subjects);
   }
 
+
+  function checkIfQuizCodeExists($randomCode)
+  {
+    $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM quizzes WHERE code = ?");
+    $stmt->bind_param("s", $randomCode);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    // If count > 0, code exists
+    return $result['count'] > 0;
+  }
+
+
+  // VOTING
+  function startVote($quizId)
+  {
+    $stmt = $this->db->prepare("INSERT INTO quiz_participation (quiz_id, start_time) VALUES (?, NOW())");
+    $stmt->bind_param("i", $quizId);
+    $stmt->execute();
+    $quizParticipationId = $stmt->insert_id;
+    $stmt->close();
+    return $quizParticipationId;
+  }
+
+
+  // TO DO - what if questions cannot be correct? like what opinion do you have on...?, what is attempted_questions
+  // in what format should total_time_taken be
+  function endVote($note, $participationId)
+  {
+      $stmt = $this->db->prepare("UPDATE quiz_participation 
+          SET end_time = NOW(),
+              total_time_taken = SEC_TO_TIME(TIMESTAMPDIFF(MINUTE, start_time, NOW())),
+              note = ?
+          WHERE participation_id = ?");
+      $stmt->bind_param("si", $note, $participationId);
+      $stmt->execute();
+      $stmt->close();
+      return $participationId;
+  }
+  
+
+  function doesParticipationExist($participationId) {
+    $stmt = $this->db->prepare("SELECT COUNT(*) AS count FROM quiz_participation WHERE participation_id = ?");
+    $stmt->bind_param("i", $participationId);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    return ($result['count'] > 0);
+  }
+
+
+  // QUESTION
+
   function insertQuestion($quizId, $questionText, $isOpenQuestion)
   {
     $stmt = $this->db->prepare("INSERT INTO questions (quiz_id, question_text, open_question) VALUES (?, ?, ?)");
@@ -184,7 +256,9 @@ function getQuizById($quizId)
     $stmt->close();
     return $questionId;
   }
-  function deleteQuestion($quizId, $questionId){
+
+  function deleteQuestion($quizId, $questionId)
+  {
     $stmt = $this->db->prepare("DELETE FROM questions WHERE quiz_id = ? AND question_id = ?");
     $stmt->bind_param("ii", $quizId, $questionId);
     $stmt->execute();
@@ -192,8 +266,10 @@ function getQuizById($quizId)
     $stmt->close();
 
     return $affectedRows > 0; // Return true if rows were affected (deletion successful), false otherwise
-}
-  function insertOption($questionId, $optionText, $isCorrect)
+  }
+
+  // QUESTION - OPTION
+  function insertOption($questionId, $optionText, $isCorrect,)
   {
     $stmt = $this->db->prepare("INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)");
     $stmt->bind_param("isi", $questionId, $optionText, $isCorrect);
@@ -201,6 +277,8 @@ function getQuizById($quizId)
     $stmt->close();
   }
 
+
+  // SUBJECT
   function verifyExistenceAndCreateSubject($subjectName)
   {
     // Check if the subject already exists in the database
@@ -222,17 +300,5 @@ function getQuizById($quizId)
     $stmt->close();
 
     return $subjectId;
-  }
-
-  function checkCodeExists($randomCode)
-  {
-    $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM quizzes WHERE code = ?");
-    $stmt->bind_param("s", $randomCode);
-    $stmt->execute();
-    $result = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-
-    // If count > 0, code exists
-    return $result['count'] > 0;
   }
 }
