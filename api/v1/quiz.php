@@ -94,7 +94,12 @@ switch ($lastUri) {
     }
     break;
   case 'vote':
-    // handleSendAnswer();
+    if ($method === 'POST') {
+      handleSendVote($dbHandler, $tokenHandler, $quizHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+  break;
   default:
     handleInvalidEndpoint();
     break;
@@ -450,6 +455,29 @@ function handleEndVote($dbHandler, $tokenHandler)
     }
     echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
+
+function handleSendVote($dbHandler, $tokenHandler, $quizHandler)
+{
+    $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+
+    $token = $tokenHandler->getTokenFromAuthorizationHeader();
+    if (!$tokenHandler->isValidToken($token, $userId)) {
+        $responseData = [
+            'error' => 'Unauthorized token'
+        ];
+        http_response_code(403);
+        echo json_encode($responseData);
+        exit;
+    }
+
+    $json = file_get_contents('php://input');
+    $requestData = json_decode($json, true);
+
+    $responseData = $quizHandler->processVote($requestData, $dbHandler);
+   
+    echo json_encode($responseData, JSON_PRETTY_PRINT);
+}
+
 
 
 function handleInvalidEndpoint()

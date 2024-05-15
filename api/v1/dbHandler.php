@@ -232,7 +232,14 @@ class dbHandler
       $stmt->close();
       return $participationId;
   }
-  
+
+  function sendVote($questionId, $participationId, $answerText)
+  {
+      $stmt = $this->db->prepare("INSERT INTO answers (question_id, participation_id, answer_text) VALUES (?, ?, ?)");
+      $stmt->bind_param("iis", $questionId, $participationId, $answerText);
+      $stmt->execute();
+      $stmt->close();
+  }  
 
   function doesParticipationExist($participationId) {
     $stmt = $this->db->prepare("SELECT COUNT(*) AS count FROM quiz_participation WHERE participation_id = ?");

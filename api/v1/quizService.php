@@ -89,4 +89,26 @@ class QuizHandler
 
     return $randomCode;
   }
+
+  function processVote($requestData, $dbHandler)
+{
+    if (!isset($requestData['participation_id'])) {
+        return [
+            'error' => 'Participation ID is missing in the request data'
+        ];
+    }
+
+    $participationId = $requestData['participation_id'];
+
+    foreach ($requestData['questions'] as $question) {
+        $questionId = $question['question_id'];
+        $answers = $question['answers'];
+
+        foreach ($answers as $answer) {
+          $answerText = $answer['answer_text'];
+          $dbHandler->sendVote($questionId, $participationId, $answerText);
+      }
+    }
+  }
+
 }
