@@ -14,10 +14,10 @@ class dbHandler
 
 
   // QUIZ
-  function insertQuiz($quizUser, $quizTitle, $quizDescription, $randomCode, $subjectId)
+  function insertQuiz($quizUser, $quizTitle, $quizDescription, $subjectId)
   {
-    $stmt = $this->db->prepare("INSERT INTO quizzes (user_id, title, description, code, subject_id) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("isssi", $quizUser, $quizTitle, $quizDescription, $randomCode, $subjectId);
+    $stmt = $this->db->prepare("INSERT INTO quizzes (user_id, title, description, subject_id) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("issi", $quizUser, $quizTitle, $quizDescription, $subjectId);
     $stmt->execute();
     $quizId = $stmt->insert_id;
     $stmt->close();
@@ -111,7 +111,6 @@ class dbHandler
                             quizzes.title,
                             quizzes.description,
                             quizzes.created_at,
-                            quizzes.code,
                             questions.question_id,
                             questions.question_text,
                             questions.open_question,
@@ -193,7 +192,7 @@ class dbHandler
 
   function checkIfQuizCodeExists($randomCode)
   {
-    $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM quizzes WHERE code = ?");
+    $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM quiz_participation WHERE code = ?");
     $stmt->bind_param("s", $randomCode);
     $stmt->execute();
     $result = $stmt->get_result()->fetch_assoc();
@@ -205,10 +204,20 @@ class dbHandler
 
 
   // VOTING
-  function startVote($quizId)
+  function getCode($participationId) {
+    $stmt = $this->db->prepare("SELECT code FROM quiz_participation WHERE participation_id = ?");
+    $stmt->bind_param("i", $participationId);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    return $result;
+  }
+
+  function startVote($quizId, $code)
   {
-    $stmt = $this->db->prepare("INSERT INTO quiz_participation (quiz_id, start_time) VALUES (?, NOW())");
-    $stmt->bind_param("i", $quizId);
+    $stmt = $this->db->prepare("INSERT INTO quiz_participation (quiz_id, start_time, code) VALUES (?, NOW(), ?)");
+    $stmt->bind_param("is", $quizId, $code);
     $stmt->execute();
     $quizParticipationId = $stmt->insert_id;
     $stmt->close();
@@ -220,16 +229,18 @@ class dbHandler
   // in what format should total_time_taken be
   function endVote($note, $participationId)
   {
-    $stmt = $this->db->prepare("UPDATE quiz_participation 
-          SET end_time = NOW(),
-              total_time_taken = SEC_TO_TIME(TIMESTAMPDIFF(MINUTE, start_time, NOW())),
-              note = ?
-          WHERE participation_id = ?");
-    $stmt->bind_param("si", $note, $participationId);
-    $stmt->execute();
-    $stmt->close();
-    return $participationId;
-  }
+      $stmt = $this->db->prepare("UPDATE quiz_participation 
+              SET end_time = NOW(),
+                  total_time_taken = SEC_TO_TIME(TIMESTAMPDIFF(MINUTE, start_time, NOW())),
+                  note = ?
+              WHERE participation_id = ? AND end_time IS NULL"); // Changed the condition to check for NULL
+      $stmt->bind_param("si", $note, $participationId);
+      $stmt->execute();
+      $rowsUpdated = $stmt->affected_rows; // Get the number of updated rows
+      $stmt->close();
+      return $rowsUpdated == 1;
+  }  
+  
 
   function sendVote($questionId, $participationId, $answerText)
   {

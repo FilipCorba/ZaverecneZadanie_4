@@ -18,19 +18,17 @@ class QuizHandler
   }
 
   public function generateQrCodeAndInsertQuizData($quizData) {
-    // Insert quiz data into the database
-    do {
-      $randomCode = $this->generateRandomCode(5);
-      $codeExists = $this->dbHandler->checkIfQuizCodeExists($randomCode);
-    } while ($codeExists);
 
-    $responseData = $this->generateQrCode($randomCode);
-    $this->insertQuizData($quizData, $randomCode);
+    $quizId = $this->insertQuizData($quizData);
+    $responseData = [
+      'quiz_id' => $quizId
+    ];
     return $responseData;
   }
 
-  public function generateQrCode($randomCode)
+  public function generateQrCode($participationId)
   {
+    $randomCode = $this->dbHandler->getCode($participationId);
     $qrCodeUrl = 'https://node' . PERSONAL_CODE . '.webte.fei.stuba.sk/survey?code=' . $randomCode;
 
     $qrCode = QrCode::create($qrCodeUrl); // Create the QR code with the generated URL
@@ -43,12 +41,13 @@ class QuizHandler
     $responseData = [
       'image' => 'data:image/png;base64,' . $imageData, // Include the base64 encoded image data in the response
       'qr_code' => $qrCodeUrl, // Include the generated QR code URL in the response
+      'code' => $randomCode
     ];
 
     return $responseData;
   }
 
-  private function insertQuizData($quizData, $randomCode)
+  private function insertQuizData($quizData)
   {
     $quizTitle = isset($quizData['title']) ? $quizData['title'] : "Quiz Title";
     $quizDescription = isset($quizData['description']) ? $quizData['description'] : "Quiz Description";
@@ -57,7 +56,7 @@ class QuizHandler
 
     $subjectId = $this->dbHandler->verifyExistenceAndCreateSubject($quizSubject);
 
-    $quizId = $this->dbHandler->insertQuiz($quizUser, $quizTitle, $quizDescription, $randomCode, $subjectId);
+    $quizId = $this->dbHandler->insertQuiz($quizUser, $quizTitle, $quizDescription, $subjectId);
 
     foreach ($quizData['questions'] as $questionData) {
       $questionText = $questionData['question'];
