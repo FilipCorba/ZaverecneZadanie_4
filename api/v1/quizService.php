@@ -6,6 +6,7 @@ require "dbHandler.php";
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\RoundBlockSizeMode;
 
 
 class QuizHandler
@@ -21,10 +22,12 @@ class QuizHandler
   public function generateQrCode($participationId)
   {
     $randomCode = $this->dbHandler->getCode($participationId);
-    $qrCodeUrl = 'https://node' . PERSONAL_CODE . '.webte.fei.stuba.sk/survey?code=' . $randomCode;
+    $qrCodeUrl = 'https://node' . PERSONAL_CODE . '.webte.fei.stuba.sk/survey?code=' . $randomCode['code'];
 
     $qrCode = QrCode::create($qrCodeUrl)
-                    ->setForegroundColor(new Color(230, 73, 25));
+      ->setMargin(10)
+      ->setRoundBlockSizeMode(RoundBlockSizeMode::Margin)
+      ->setForegroundColor(new Color(230, 73, 25));
     $writer = new PngWriter;
     $result = $writer->write($qrCode); // Write the QR code to a PNG image
 
@@ -36,7 +39,7 @@ class QuizHandler
       'qr_code' => $qrCodeUrl, // Include the generated QR code URL in the response
       'code' => $randomCode['code']
     ];
-
+ 
     return $responseData;
   }
 
@@ -53,12 +56,12 @@ class QuizHandler
 
     foreach ($quizData['questions'] as $questionData) {
       $questionText = $questionData['question'];
-      $isOpenQuestion = $questionData['isOpenAnswer'] == "true" ? 1 : 0; 
+      $isOpenQuestion = $questionData['isOpenAnswer'] == "true" ? 1 : 0;
 
       $questionId = $this->dbHandler->insertQuestion($quizId, $questionText, $isOpenQuestion);
 
       foreach ($questionData['options'] as $optionData) {
-        $optionText = $optionData['value']; 
+        $optionText = $optionData['value'];
         $isCorrect = $optionData['isCorrect']  == "true" ? 1 : 0;
 
         $this->dbHandler->insertOption($questionId, $optionText, $isCorrect);
@@ -87,24 +90,23 @@ class QuizHandler
   }
 
   function processVote($requestData, $dbHandler)
-{
+  {
     if (!isset($requestData['participation_id'])) {
-        return [
-            'error' => 'Participation ID is missing in the request data'
-        ];
+      return [
+        'error' => 'Participation ID is missing in the request data'
+      ];
     }
 
     $participationId = $requestData['participation_id'];
 
     foreach ($requestData['questions'] as $question) {
-        $questionId = $question['question_id'];
-        $answers = $question['answers'];
+      $questionId = $question['question_id'];
+      $answers = $question['answers'];
 
-        foreach ($answers as $answer) {
-          $answerText = $answer['answer_text'];
-          $dbHandler->sendVote($questionId, $participationId, $answerText);
+      foreach ($answers as $answer) {
+        $answerText = $answer['answer_text'];
+        $dbHandler->sendVote($questionId, $participationId, $answerText);
       }
     }
   }
-
 }
