@@ -81,7 +81,6 @@ class dbHandler
                             quizzes.title AS quiz_title,
                             quizzes.description AS quiz_description,
                             quizzes.created_at AS quiz_created_at,
-                            quizzes.code AS quiz_code, 
                             questions.question_id,
                             questions.question_text,
                             questions.open_question,
@@ -130,7 +129,6 @@ class dbHandler
       'quiz_title' => $quizData[0]['quiz_title'],
       'quiz_description' => $quizData[0]['quiz_description'],
       'quiz_created_at' => $quizData[0]['quiz_created_at'],
-      'quiz_code' => $quizData[0]['quiz_code'],
       'subject' => $quizData[0]['subject_name'],
       'questions' => []
     ];
@@ -157,7 +155,7 @@ class dbHandler
 
   function getListOfQuizzes($userId)
   {
-    $stmt = $this->db->prepare("SELECT q.quiz_id, q.title, q.description, q.created_at, q.code, s.name  
+    $stmt = $this->db->prepare("SELECT q.quiz_id, q.title, q.description, q.created_at, s.name  
                                 FROM quizzes q
                                 JOIN subjects s on s.subject_id = q.subject_id 
                                 WHERE user_id = ?");
@@ -185,7 +183,7 @@ class dbHandler
 
     $subjects = array();
     while ($row = $result->fetch_assoc()) {
-        $subjects[] = $row;
+      $subjects[] = $row;
     }
 
     // Encode the array as JSON
@@ -222,19 +220,20 @@ class dbHandler
   // in what format should total_time_taken be
   function endVote($note, $participationId)
   {
-      $stmt = $this->db->prepare("UPDATE quiz_participation 
+    $stmt = $this->db->prepare("UPDATE quiz_participation 
           SET end_time = NOW(),
               total_time_taken = SEC_TO_TIME(TIMESTAMPDIFF(MINUTE, start_time, NOW())),
               note = ?
           WHERE participation_id = ?");
-      $stmt->bind_param("si", $note, $participationId);
-      $stmt->execute();
-      $stmt->close();
-      return $participationId;
+    $stmt->bind_param("si", $note, $participationId);
+    $stmt->execute();
+    $stmt->close();
+    return $participationId;
   }
-  
 
-  function doesParticipationExist($participationId) {
+
+  function doesParticipationExist($participationId)
+  {
     $stmt = $this->db->prepare("SELECT COUNT(*) AS count FROM quiz_participation WHERE participation_id = ?");
     $stmt->bind_param("i", $participationId);
     $stmt->execute();
@@ -269,7 +268,7 @@ class dbHandler
   }
 
   // QUESTION - OPTION
-  function insertOption($questionId, $optionText, $isCorrect,)
+  function insertOption($questionId, $optionText, $isCorrect, )
   {
     $stmt = $this->db->prepare("INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)");
     $stmt->bind_param("isi", $questionId, $optionText, $isCorrect);
