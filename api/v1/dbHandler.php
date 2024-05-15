@@ -33,10 +33,10 @@ class dbHandler
     return $success;
   }
 
-  function deleteQuiz($quizId)
+  function deleteQuiz($quizId, $userId)
   {
     // Check if the quiz exists
-    if (!$this->quizExists($quizId)) {
+    if (!$this->quizExists($quizId, $userId)) {
       return false; // Quiz does not exist
     }
 
@@ -60,10 +60,10 @@ class dbHandler
     return true;
   }
 
-  function quizExists($quizId)
+  function quizExists($quizId, $userId)
   {
-    $stmt = $this->db->prepare("SELECT COUNT(*) AS count FROM quizzes WHERE quiz_id = ?");
-    $stmt->bind_param("i", $quizId);
+    $stmt = $this->db->prepare("SELECT COUNT(*) AS count FROM quizzes WHERE quiz_id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $quizId, $userId);
     $stmt->execute();
     $result = $stmt->get_result()->fetch_assoc();
     $stmt->close();
@@ -195,6 +195,33 @@ class dbHandler
     $quizParticipationId = $stmt->insert_id;
     $stmt->close();
     return $quizParticipationId;
+  }
+
+
+  // TO DO - what if questions cannot be correct? like what opinion do you have on...?, what is attempted_questions
+  // in what format should total_time_taken be
+  function endVote($note, $participationId)
+  {
+      $stmt = $this->db->prepare("UPDATE quiz_participation 
+          SET end_time = NOW(),
+              total_time_taken = SEC_TO_TIME(TIMESTAMPDIFF(MINUTE, start_time, NOW())),
+              note = ?
+          WHERE participation_id = ?");
+      $stmt->bind_param("si", $note, $participationId);
+      $stmt->execute();
+      $stmt->close();
+      return $participationId;
+  }
+  
+
+  function doesParticipationExist($participationId) {
+    $stmt = $this->db->prepare("SELECT COUNT(*) AS count FROM quiz_participation WHERE participation_id = ?");
+    $stmt->bind_param("i", $participationId);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    return ($result['count'] > 0);
   }
 
 
