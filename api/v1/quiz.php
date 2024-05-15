@@ -18,9 +18,7 @@ $lastUri = basename($uri);
 
 switch ($lastUri) {
   case 'generate-qr':
-    if ($method === 'POST') {
-      handleGenerateQR($quizHandler, $tokenHandler);
-    } elseif ($method === 'GET') {
+    if ($method === 'GET') {
       handleGetQR($quizHandler);
     } else {
       handleInvalidRequestMethod();
@@ -43,6 +41,9 @@ switch ($lastUri) {
 
   case 'quiz':
     switch ($method) {
+      case 'POST':
+        handleCreateQuiz($quizHandler, $tokenHandler);
+        break;
       case 'GET':
         handleGetQuiz($dbHandler, $tokenHandler);
         break;
@@ -106,7 +107,7 @@ switch ($lastUri) {
 }
 
 
-function handleGenerateQR($quizHandler, $tokenHandler)
+function handleCreateQuiz($quizHandler, $tokenHandler)
 {
   $token = $tokenHandler->getTokenFromAuthorizationHeader();
 
@@ -120,7 +121,7 @@ function handleGenerateQR($quizHandler, $tokenHandler)
     echo json_encode($responseData);
     exit;
   }
-  $responseData = $quizHandler->generateQrCodeAndInsertQuizData($data);
+  $responseData = $quizHandler->insertQuizData($data);
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
