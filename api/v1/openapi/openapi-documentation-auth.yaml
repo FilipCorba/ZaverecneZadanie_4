@@ -145,5 +145,75 @@ paths:
                   success:
                     type: string
                     example: Role was succesfully changed
+  /users:
+    get:
+      summary: Get users with roles
+      description: Retrieves information about users along with their roles.
+      responses:
+        "200":
+          description: Successful retrieval of users with roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    user_id:
+                      type: integer
+                    name:
+                      type: string
+                    mail:
+                      type: string
+                    role:
+                      type: string
+  /admins:
+    get:
+      summary: Get admin users
+      description: Retrieves information about admin users.
+      responses:
+        "200":
+          description: Successful retrieval of admin users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    user_id:
+                      type: integer
+                    name:
+                      type: string
+                    mail:
+                      type: string
+                    role:
+                      type: string
+  /user:
+    get:
+      summary: Get user by ID
+      description: Retrieves information about a user by their ID.
+      parameters:
+        - in: query
+          name: user-id
+          required: true
+          schema:
+            type: integer
+            example: 1
+          description: The ID of the user to retrieve information for.
+      responses:
+        "200":
+          description: Successful retrieval of user information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string  
 
  
