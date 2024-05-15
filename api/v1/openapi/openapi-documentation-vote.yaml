@@ -28,11 +28,32 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  message:
-                    type: string
-                    example: Vote started successfully
+                type: integer
+                example: 1
+                    
+  /end-vote:
+    post:
+      summary: End a vote
+      description: End a vote by providing the participation ID and optional note.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+                  description: Optional note for the vote.
+                participation_id:
+                  type: integer
+                  format: int64
+                  description: The ID of the participation to end the vote for.
+      responses:
+        '200':
+          description: Vote ended successfully.
+          content:
+            application/json:
+              schema:
+                type: integer
+                example: 1
