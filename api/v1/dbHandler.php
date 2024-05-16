@@ -137,10 +137,6 @@ class dbHandler
         $questionKey = 'question_' . $row['question_id'];
         $options = json_decode($row['options'], true);
 
-        if ($options['option_id'] == null) {
-          $options = [];
-        }
-
         $formattedQuizData['questions'][$questionKey] = [
           'question_text' => $row['question_text'],
           'open_question' => $row['open_question'],
