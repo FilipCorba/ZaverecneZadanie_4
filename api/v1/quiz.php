@@ -17,26 +17,38 @@ $uri = strtok($_SERVER['REQUEST_URI'], '?');
 $lastUri = basename($uri);
 
 $endpointHandlers = [
-  'generate-qr' => ['GET' => 'handleGetQR'],
-  'question' => ['PUT' => 'handleQuestionChange', 'DELETE' => 'handleQuestionDelete'],
-  'quiz' => ['POST' => 'handleCreateQuiz', 'GET' => 'handleGetQuiz', 'PUT' => 'handleQuizTitleChange', 'DELETE' => 'handleQuizDelete'],
-  'quiz-list' => ['GET' => 'handleGetListOfQuizzes'],
-  'subjects' => ['GET' => 'handleGetListOfSubjects'],
-  'start-vote' => ['POST' => 'handleStartVote'],
-  'end-vote' => ['POST' => 'handleEndVote'],
-  'vote' => ['POST' => 'handleSendVote'],
-  'survey' => ['GET' => 'handleGetSurvey'],
-  'voting-list' => ['GET' => 'handleGetVotingList'],
-  'statistics' => ['GET' => 'handleGetVoteStatistics'],
+  'GET' => [
+    'generate-qr' => 'handleGetQR',
+    'quiz-list' => 'handleGetListOfQuizzes',
+    'subjects' => 'handleGetListOfSubjects',
+    'survey' => 'handleGetSurvey',
+    'voting-list' => 'handleGetVotingList',
+    'statistics' => 'handleGetVoteStatistics',
+  ],
+  'POST' => [
+    'start-vote' => 'handleStartVote',
+    'end-vote' => 'handleEndVote',
+    'vote' => 'handleSendVote',
+    'quiz' => 'handleCreateQuiz',
+  ],
+  'PUT' => [
+    'question' => 'handleQuestionChange',
+    'quiz' => 'handleQuizTitleChange',
+  ],
+  'DELETE' => [
+    'question' => 'handleQuestionDelete',
+    'quiz' => 'handleQuizDelete',
+  ],
 ];
 
 // Handle the request
-if (isset($endpointHandlers[$lastUri]) && isset($endpointHandlers[$lastUri][$method])) {
-  $handlerFunction = $endpointHandlers[$lastUri][$method];
+if (isset($endpointHandlers[$method][$lastUri])) {
+  $handlerFunction = $endpointHandlers[$method][$lastUri];
   $handlerFunction($dbHandler, $tokenHandler, $quizHandler);
 } else {
   handleInvalidRequestMethod();
 }
+
 
 
 

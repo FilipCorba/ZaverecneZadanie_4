@@ -10,78 +10,47 @@ header('Content-Type: application/json');
 $uri = strtok($_SERVER['REQUEST_URI'], '?');
 $lastUri = basename($uri);
 
-switch ($method) {
-  case 'POST':
-    switch ($lastUri) {
+// Define endpoint handlers
+$endpointHandlers = [
+  'POST' => [
+    'login' => 'handleLogin',
+    'register' => 'handleRegistration',
+    'password-change' => 'handlePasswordChange',
+  ],
+  'PUT' => [
+    'role' => 'handleRoleChange',
+  ],
+  'GET' => [
+    'user' => 'handleGetUser',
+    'users' => 'handleGetUsers',
+    'admins' => 'handleGetAdmins',
+  ],
+];
 
-      case 'login':
-        handleLogin($tokenHandler);
-        break;
-
-      case 'register':
-        handleRegistration($tokenHandler);
-        break;
-
-      case 'password-change':
-        handlePasswordChange();
-        break;
-
-      default:
-        handleInvalidEndpoint();
-        break;
+// Handle the request
+if (isset($endpointHandlers[$method])) {
+  $methodHandlers = $endpointHandlers[$method];
+  if (isset($methodHandlers[$lastUri])) {
+    $handlerFunction = $methodHandlers[$lastUri];
+    if (function_exists($handlerFunction)) {
+      // Call the appropriate handler function
+      $handlerFunction($tokenHandler);
+    } else {
+      handleInvalidEndpoint();
     }
-    break;
-
-  case 'PUT':
-    switch ($lastUri) {
-      case 'role':
-        handleRoleChange($tokenHandler);
-        break;
-
-      default:
-        handleInvalidEndpoint();
-        break;
-    }
-    break;
-
-  case 'GET':
-    switch ($lastUri) {
-      case 'user':
-        if (isset($_GET['user-id'])) {
-          handleGetUser($tokenHandler);
-        } else {
-          handleInvalidEndpoint();
-        }
-        break;
-      case 'users':
-        handleGetUsers($tokenHandler);
-        break;
-      case 'admins':
-        handleGetAdmins($tokenHandler);
-        break;
-      default:
-        handleInvalidEndpoint();
-        break;
-    }
-    break;
-  default:
-    handleInvalidRequestMethod();
-    break;
+  } else {
+    handleInvalidEndpoint();
+  }
+} else {
+  handleInvalidRequestMethod();
 }
+
 
 function handleGetUser($tokenHandler)
 {
   $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
 
-  $token = $tokenHandler->getTokenFromAuthorizationHeader();
-  if (!$tokenHandler->isValidToken($token, $userId)) {
-    $responseData = [
-      'error' => 'Unauthorized token'
-    ];
-    http_response_code(403);
-    echo json_encode($responseData);
-    exit;
-  }
+  $tokenHandler->validateToken($userId);
 
   if ($userId != null) {
     $userInfo = getUserById($userId);
@@ -102,15 +71,8 @@ function handleGetUser($tokenHandler)
 
 function handleGetUsers($tokenHandler)
 {
-  $token = $tokenHandler->getTokenFromAuthorizationHeader();
-  if (!$tokenHandler->isAdminToken($token)) {
-    $responseData = [
-      'error' => 'Unauthorized token'
-    ];
-    http_response_code(403);
-    echo json_encode($responseData);
-    exit;
-  }
+  $tokenHandler->validateAdminToken();
+
   $usersInfo = getUsers();
   $users = [];
   while ($row = $usersInfo->fetch_assoc()) {
@@ -128,15 +90,8 @@ function handleGetUsers($tokenHandler)
 
 function handleGetAdmins($tokenHandler)
 {
-  $token = $tokenHandler->getTokenFromAuthorizationHeader();
-  if (!$tokenHandler->isAdminToken($token)) {
-    $responseData = [
-      'error' => 'Unauthorized token'
-    ];
-    http_response_code(403);
-    echo json_encode($responseData);
-    exit;
-  }
+  $tokenHandler->validateAdminToken();
+
   $adminsInfo = getAdmins();
   $admins = [];
   while ($row = $adminsInfo->fetch_assoc()) {
@@ -152,13 +107,14 @@ function handleGetAdmins($tokenHandler)
   echo $jsonResponse;
 }
 
-function handlePasswordChange()
+function handlePasswordChange($tokenHandler)
 {
   $data = json_decode(file_get_contents('php://input'), true);
   //timestamp-prvykrat overenie hesla,tak zacne odpocet a ak do 5 min nepride nove heslo,tak sa akcia nekona...404 zmeskane
   $userId = $data['user_id'];
   $password = $data['password'];
   $newPassword = $data['new_password'];
+  $tokenHandler->validateToken($userId);
 
   $user = getUserById($userId);
   if ($user) {
@@ -205,15 +161,7 @@ function isPasswordChangeRequestValid($timestamp)
 
 function handleRoleChange($tokenHandler)
 {
-  $token = $tokenHandler->getTokenFromAuthorizationHeader();
-  if (!$tokenHandler->isAdminToken($token)) {
-    $responseData = [
-      'error' => 'Unauthorized token'
-    ];
-    http_response_code(403);
-    echo json_encode($responseData);
-    exit;
-  }
+  $tokenHandler->validateAdminToken();
 
   $userId = isset($_GET['userId']) ? $_GET['userId'] : null;
 

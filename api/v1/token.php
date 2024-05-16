@@ -15,10 +15,10 @@ class Token
         }
     }
 
-    function validateAdminToken($userId)
+    function validateAdminToken()
     {
         $token = $this->getTokenFromAuthorizationHeader();
-        if (!$this->isAdminToken($token, $userId)) {
+        if (!$this->isAdminToken($token)) {
             $responseData = [
                 'error' => 'Unauthorized admin token'
             ];
