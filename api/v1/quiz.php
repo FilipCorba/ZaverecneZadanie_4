@@ -101,9 +101,16 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
+
   case 'survey':
     if ($method === 'GET') {
       handleGetSurvey($quizHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+  case 'voting-list':
+    if ($method === 'GET') {
+      handleGetVotingList($dbHandler, $tokenHandler);
     } else {
       handleInvalidRequestMethod();
     }
@@ -446,58 +453,48 @@ function handleStartVote($dbHandler, $tokenHandler, $quizHandler)
 
 function handleEndVote($dbHandler, $tokenHandler)
 {
-    // Check if user-id is provided in the query string
-    $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
 
-    // Validate the token
-    $token = $tokenHandler->getTokenFromAuthorizationHeader();
-    if (!$tokenHandler->isValidToken($token, $userId)) {
-        $responseData = [
-            'error' => 'Unauthorized token'
-        ];
-        http_response_code(403);
-        echo json_encode($responseData);
-        exit;
-    }
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
 
-    // Get request data from the body
-    $json = file_get_contents('php://input');
-    $requestData = json_decode($json, true);
+  $json = file_get_contents('php://input');
+  $requestData = json_decode($json, true);
 
-    // Extract note and participation_id from the request data
-    $note = isset($requestData['note']) ? $requestData['note'] : null;
-    $participationId = isset($requestData['participation_id']) ? $requestData['participation_id'] : null;
+  $note = isset($requestData['note']) ? $requestData['note'] : null;
+  $participationId = isset($requestData['participation_id']) ? $requestData['participation_id'] : null;
 
-    // Check if the participation exists
-    $quizParticipation = $dbHandler->doesParticipationExist($participationId);
+  $quizParticipation = $dbHandler->doesParticipationExist($participationId);
 
-    if ($quizParticipation) {
-        // Try to end the vote
-        $success = $dbHandler->endVote($note, $participationId);
+  if ($quizParticipation) {
+    $success = $dbHandler->endVote($note, $participationId);
 
-        if ($success) {
-            // If successful, return success response
-            $responseData = [
-                'success' => 'Vote was successfully closed'
-            ];
-            http_response_code(200);
-        } else {
-            // If the vote was already closed, return error
-            $responseData = [
-                'error' => 'This vote was already closed',
-            ];
-            http_response_code(400);
-        }
+    if ($success) {
+      $responseData = [
+        'success' => 'Vote was successfully closed'
+      ];
+      http_response_code(200);
     } else {
-        // If participation doesn't exist, return error
-        $responseData = [
-            'error' => 'Voting with given ID does not exist',
-        ];
-        http_response_code(404);
+      $responseData = [
+        'error' => 'This vote was already closed',
+      ];
+      http_response_code(400);
     }
+  } else {
+    $responseData = [
+      'error' => 'Voting with given ID does not exist',
+    ];
+    http_response_code(404);
+  }
 
-    // Return the response
-    echo json_encode($responseData, JSON_PRETTY_PRINT);
+  echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
 
@@ -523,6 +520,26 @@ function handleSendVote($dbHandler, $tokenHandler, $quizHandler)
   $responseData = [
     'success' => 'Answers were successfully saved.'
   ];
+
+  echo json_encode($responseData, JSON_PRETTY_PRINT);
+}
+
+function handleGetVotingList($dbHandler, $tokenHandler)
+{
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+  $quizId = isset($_GET['quiz-id']) ? $_GET['quiz-id'] : null;
+
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  $responseData = $dbHandler->getVoteList($quizId);
 
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
