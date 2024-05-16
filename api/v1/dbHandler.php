@@ -307,7 +307,6 @@ class dbHandler
     return $quizParticipationId;
   }
 
-
   // TO DO - what if questions cannot be correct? like what opinion do you have on...?, what is attempted_questions
   // in what format should total_time_taken be
   function endVote($note, $participationId)
@@ -324,7 +323,6 @@ class dbHandler
     return $rowsUpdated == 1;
   }
 
-
   function sendVote($questionId, $participationId, $answerText)
   {
     $stmt = $this->db->prepare("INSERT INTO answers (question_id, participation_id, answer_text) VALUES (?, ?, ?)");
@@ -333,6 +331,20 @@ class dbHandler
     $stmt->close();
   }
 
+  function getVoteList($quizId)
+  {
+    $stmt = $this->db->prepare("SELECT * FROM quiz_participation
+                                WHERE quiz_id = ?;");
+    $stmt->bind_param("i", $quizId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $quizzes = array();
+    while ($row = $result->fetch_assoc()) {
+      $quizzes[] = $row;
+    }
+    return ['data' => $quizzes];
+  }
 
   function doesParticipationExist($participationId)
   {
