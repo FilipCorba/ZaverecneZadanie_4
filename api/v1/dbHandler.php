@@ -346,6 +346,40 @@ class dbHandler
     return ['data' => $quizzes];
   }
 
+  function getVoteStatistics($participationId) {
+    $stmt = $this->db->prepare("SELECT q.question_id, q.question_text, q.open_question, a.answer_text, COUNT(*) AS answer_count
+                                  FROM questions q
+                                  JOIN quizzes ON quizzes.quiz_id = q.quiz_id 
+                                  JOIN answers a ON q.question_id = a.question_id
+                                  WHERE a.participation_id = ?
+                                  GROUP BY q.question_id, a.answer_text;");
+    $stmt->bind_param("i", $participationId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $questions = array();
+    while ($row = $result->fetch_assoc()) {
+        $questionIndex = array_search($row['question_text'], array_column($questions, 'question_text'));
+        if ($questionIndex === false) {
+            $questions[] = [
+                'question_id' => $row['question_id'], 
+                'question_text' => $row['question_text'],
+                'open_question' => $row['open_question'],
+                'answers' => [
+                    ['answer_text' => $row['answer_text'], 'answer_count' => $row['answer_count']]
+                ]
+            ];
+        } else {
+            $questions[$questionIndex]['answers'][] = [
+                'answer_text' => $row['answer_text'],
+                'answer_count' => $row['answer_count']
+            ];
+        }
+    }
+    return ['data' => $questions];
+}
+
+
   function doesParticipationExist($participationId)
   {
     $stmt = $this->db->prepare("SELECT COUNT(*) AS count FROM quiz_participation WHERE participation_id = ?");

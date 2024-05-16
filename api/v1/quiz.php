@@ -101,7 +101,6 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
-
   case 'survey':
     if ($method === 'GET') {
       handleGetSurvey($quizHandler);
@@ -111,6 +110,13 @@ switch ($lastUri) {
   case 'voting-list':
     if ($method === 'GET') {
       handleGetVotingList($dbHandler, $tokenHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
+  case 'statistics':
+    if ($method === 'GET') {
+      handleGetVoteStatistics($dbHandler, $tokenHandler);
     } else {
       handleInvalidRequestMethod();
     }
@@ -142,7 +148,7 @@ function handleCreateQuiz($quizHandler, $tokenHandler)
 function handleGetSurvey($quizHandler)
 {
   $code = isset($_GET['code']) ? $_GET['code'] : null;
-  echo $quizHandler-> getSurvey($code);
+  echo $quizHandler->getSurvey($code);
 }
 function handleGetQR($quizHandler)
 {
@@ -540,6 +546,26 @@ function handleGetVotingList($dbHandler, $tokenHandler)
   }
 
   $responseData = $dbHandler->getVoteList($quizId);
+
+  echo json_encode($responseData, JSON_PRETTY_PRINT);
+}
+
+function handleGetVoteStatistics($dbHandler, $tokenHandler)
+{
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+  $participationId = isset($_GET['participation-id']) ? $_GET['participation-id'] : null;
+
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  $responseData = $dbHandler->getVoteStatistics($participationId);
 
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
