@@ -2,7 +2,33 @@
 
 class Token
 {
-    function isValidToken($token, $userId)
+    function validateToken($userId)
+    {
+        $token = $this->getTokenFromAuthorizationHeader();
+        if (!$this->isValidToken($token, $userId)) {
+            $responseData = [
+                'error' => 'Unauthorized token'
+            ];
+            http_response_code(403);
+            echo json_encode($responseData);
+            exit;
+        }
+    }
+
+    function validateAdminToken($userId)
+    {
+        $token = $this->getTokenFromAuthorizationHeader();
+        if (!$this->isAdminToken($token, $userId)) {
+            $responseData = [
+                'error' => 'Unauthorized admin token'
+            ];
+            http_response_code(403);
+            echo json_encode($responseData);
+            exit;
+        }
+    }
+
+    private function isValidToken($token, $userId)
     {
         global $db;
 
@@ -23,7 +49,7 @@ class Token
         return $result['count'] > 0;
     }
 
-    function isAdminToken($token)
+    private function isAdminToken($token)
     {
         global $db;
 
@@ -44,7 +70,7 @@ class Token
         return $result['count'] > 0;
     }
 
-    function getTokenFromAuthorizationHeader()
+    private function getTokenFromAuthorizationHeader()
     {
         $headers = apache_request_headers();
 
