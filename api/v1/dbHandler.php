@@ -137,10 +137,6 @@ class dbHandler
         $questionKey = 'question_' . $row['question_id'];
         $options = json_decode($row['options'], true);
 
-        if ($options['option_id'] == null) {
-          $options = [];
-        }
-
         $formattedQuizData['questions'][$questionKey] = [
           'question_text' => $row['question_text'],
           'open_question' => $row['open_question'],
@@ -158,7 +154,7 @@ class dbHandler
                                     q.title, 
                                     q.description, 
                                     q.created_at, 
-                                    s.name,
+                                    s.name as subject_name,
                                     COUNT(questions.question_id) AS number_of_questions,
                                     CASE 
                                         WHEN COUNT(qp.participation_id) > 0 THEN true
@@ -343,6 +339,21 @@ class dbHandler
     $stmt->close();
 
     return ($result['count'] > 0);
+  }
+
+  function getVoteList($quizId)
+  {
+    $stmt = $this->db->prepare("SELECT * FROM quiz_participation
+                                WHERE quiz_id = ?;");
+    $stmt->bind_param("i", $quizId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $quizzes = array();
+    while ($row = $result->fetch_assoc()) {
+      $quizzes[] = $row;
+    }
+    return ['data' => $quizzes];
   }
 
 
