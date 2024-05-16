@@ -297,3 +297,33 @@ paths:
                   properties:
                     name:
                       type: string                        
+  /survey:
+    get:
+      summary: Get survey questions
+      description: Retrieves survey questions with options based on a provided code.
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: integer
+            example: 1
+          description: The code of the survey to retrieve questions for.
+      responses:
+        "200":
+          description: Successful retrieval of survey questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    quiz_type:
+                      type: string
+                    question:
+                      type: string
+                    options:
+                      type: array
+                      items:
+                        type: string
