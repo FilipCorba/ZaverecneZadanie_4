@@ -101,13 +101,13 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
-
   case 'survey':
     if ($method === 'GET') {
       handleGetSurvey($quizHandler);
     } else {
       handleInvalidRequestMethod();
     }
+    break;
   case 'voting-list':
     if ($method === 'GET') {
       handleGetVotingList($dbHandler, $tokenHandler);
