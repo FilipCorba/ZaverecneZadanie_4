@@ -88,6 +88,13 @@ class QuizHandler
     return $randomCode;
   }
 
+  function getSurvey($code)
+  {
+      $quizId = $this -> dbHandler -> getQuizId($code);
+      $questions = $this -> dbHandler -> getQuestions($quizId);
+      return $this -> dbHandler -> getSurvey($questions);
+  }
+
   function processVote($requestData, $dbHandler)
   {
     if (!isset($requestData['participation_id'])) {

@@ -101,6 +101,13 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
+  case 'survey':
+    if ($method === 'GET') {
+      handleGetSurvey($quizHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
   default:
     handleInvalidEndpoint();
     break;
@@ -125,6 +132,11 @@ function handleCreateQuiz($quizHandler, $tokenHandler)
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
+function handleGetSurvey($quizHandler)
+{
+  $code = isset($_GET['code']) ? $_GET['code'] : null;
+  echo $quizHandler-> getSurvey($code);
+}
 function handleGetQR($quizHandler)
 {
   $participationId = isset($_GET['participation-id']) ? $_GET['participation-id'] : null;

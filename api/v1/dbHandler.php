@@ -227,6 +227,76 @@ class dbHandler
     return $result;
   }
 
+  function getQuizId($code)
+  {
+    $stmt = $this->db->prepare("SELECT DISTINCT quiz_id FROM quiz_participation WHERE code = ?");
+    $stmt->bind_param("s", $code);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if ($result) {
+        $quizId = intval($result['quiz_id']);
+        return $quizId;
+    } else {
+        return 0; 
+    }
+  }
+
+  function getQuestions($quizId)
+  {
+    $stmt = $this->db->prepare("SELECT question_id, question_text FROM questions WHERE quiz_id = ?");
+    $stmt->bind_param("i", $quizId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stmt->close();
+
+    $questions = [];
+    if ($result) { 
+        while ($row = $result->fetch_assoc()) {
+            $questions[] = $row;
+        }
+    } 
+    return $questions;
+  }
+
+  function getSurvey($questions)
+  {
+    $optionsJson = []; 
+
+    foreach ($questions as $question) {
+        $questionId = $question['question_id'];
+        $questionText = $question['question_text'];
+
+        $stmt = $this->db->prepare("SELECT option_text FROM options WHERE question_id = ?");
+        $stmt->bind_param("i", $questionId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stmt->close();
+
+        $questionOptions = [];
+
+        while ($row = $result->fetch_assoc()) {
+            $questionOptions[] = $row['option_text'];
+        }
+        $quizType = "options";
+        if (count($questionOptions) == 0)
+        {
+          $quizType = "open";
+        }
+
+        $questionData = [
+            'quiz_type' => $quizType,
+            'question' => $questionText,
+            'options' => $questionOptions
+        ];
+
+        $optionsJson[] = $questionData;
+    }
+
+    return json_encode($optionsJson);
+  }
+
   function startVote($quizId, $code)
   {
     $stmt = $this->db->prepare("INSERT INTO quiz_participation (quiz_id, start_time, code) VALUES (?, NOW(), ?)");
