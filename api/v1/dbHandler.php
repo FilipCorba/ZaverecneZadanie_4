@@ -271,6 +271,21 @@ class dbHandler
     return ($result['count'] > 0);
   }
 
+  function getParticipation($participationId) {
+    $stmt = $this->db->prepare("SELECT * FROM quiz_participation
+                                WHERE participation_id = ?;");
+    $stmt->bind_param("i", $participationId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $participationData = [];
+    while ($row = $result->fetch_assoc()) {
+        $participationData[] = $row;
+    }
+
+    return $participationData;
+}
+
   function getVoteList($quizId)
   {
     $stmt = $this->db->prepare("SELECT * FROM quiz_participation
