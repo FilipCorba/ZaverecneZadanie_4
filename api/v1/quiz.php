@@ -24,7 +24,6 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
-
   case 'question':
     if ($method === 'PUT') {
       // handleQuestionChange($tokenHandler);
@@ -38,7 +37,6 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
-
   case 'quiz':
     switch ($method) {
       case 'POST':
@@ -107,9 +105,17 @@ switch ($lastUri) {
     } else {
       handleInvalidRequestMethod();
     }
+    break;
   case 'voting-list':
     if ($method === 'GET') {
       handleGetVotingList($dbHandler, $tokenHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
+  case 'export':
+    if ($method === 'GET') {
+      handleExport($dbHandler, $tokenHandler);
     } else {
       handleInvalidRequestMethod();
     }
@@ -550,6 +556,30 @@ function handleGetVotingList($dbHandler, $tokenHandler)
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
+// TO DO refactor token validation
+// this has been tested through browser, not postman
+function handleExport($dbHandler, $tokenHandler) {
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+  $participationId = isset($_GET['participation-id']) ? $_GET['participation-id'] : null;
+
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+  
+  $participation = $dbHandler->getParticipation($participationId);
+
+  header('Content-Type: application/json');
+  // force download
+  header('Content-Disposition: attachment; filename="participation.json"');
+  echo json_encode($participation);
+}
+
 function handleGetVoteStatistics($dbHandler, $tokenHandler)
 {
   $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
@@ -569,8 +599,6 @@ function handleGetVoteStatistics($dbHandler, $tokenHandler)
 
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
-
-
 
 function handleInvalidEndpoint()
 {

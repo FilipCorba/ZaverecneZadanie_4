@@ -137,10 +137,6 @@ class dbHandler
         $questionKey = 'question_' . $row['question_id'];
         $options = json_decode($row['options'], true);
 
-        if ($options['option_id'] == null) {
-          $options = [];
-        }
-
         $formattedQuizData['questions'][$questionKey] = [
           'question_text' => $row['question_text'],
           'open_question' => $row['open_question'],
@@ -330,6 +326,22 @@ class dbHandler
     $stmt->execute();
     $stmt->close();
   }
+
+  function getParticipation($participationId) {
+    $stmt = $this->db->prepare("SELECT * FROM quiz_participation
+                                WHERE participation_id = ?;");
+    $stmt->bind_param("i", $participationId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $participationData = [];
+    while ($row = $result->fetch_assoc()) {
+        $participationData[] = $row;
+    }
+
+    return $participationData;
+}
+
 
   function getVoteList($quizId)
   {
