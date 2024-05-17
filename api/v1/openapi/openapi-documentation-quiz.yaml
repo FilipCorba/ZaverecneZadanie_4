@@ -327,3 +327,25 @@ paths:
                       type: array
                       items:
                         type: string
+  /copy:
+    post:
+      summary: Copy question
+      description: Copy a question for a specific user.
+      parameters:
+        - in: query
+          name: user-id
+          schema:
+            type: integer
+            example: 7
+          required: true
+          description: The ID of the user.
+        - in: query
+          name: question-id
+          schema:
+            type: integer
+            example: 97
+          required: true
+          description: The ID of the question to copy.
+      responses:
+        '200':
+          description: Success

@@ -91,8 +91,17 @@ class QuizHandler
   function getSurvey($code)
   {
       $quizId = $this -> dbHandler -> getQuizId($code);
+      if ($quizId == null) {
+        return null;
+      }
       $questions = $this -> dbHandler -> getQuestions($quizId);
       return $this -> dbHandler -> getSurvey($questions);
+  }
+
+  function copyQuestion($questionId)
+  {
+    $newQuestionId = $this -> dbHandler -> copyQuestion($questionId);
+    $this -> dbHandler -> copyOptions($newQuestionId, $questionId);
   }
 
   function processVote($requestData, $dbHandler)

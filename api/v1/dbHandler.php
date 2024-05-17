@@ -227,6 +227,31 @@ class dbHandler
     return $result;
   }
 
+  function copyQuestion($questionId)
+  {
+    $stmt = $this->db->prepare("INSERT INTO questions (quiz_id, question_text, open_question)
+                                SELECT quiz_id, question_text, open_question
+                                FROM questions
+                                WHERE question_id = ?");
+    $stmt->bind_param("i", $questionId);
+    $stmt->execute();
+
+    $newQuestionId = $this->db->insert_id;
+
+    return $newQuestionId;
+  }
+
+  function copyOptions($newQuestionId, $questionId)
+  {
+    $stmt = $this->db->prepare("INSERT INTO options (question_id, option_text, is_correct, context)
+                                SELECT ?, option_text, is_correct, context
+                                FROM options
+                                WHERE question_id = ?");
+    $stmt->bind_param("ii", $newQuestionId, $questionId);
+    $stmt->execute();
+  }
+
+
   function getQuizId($code)
   {
     $stmt = $this->db->prepare("SELECT DISTINCT quiz_id FROM quiz_participation WHERE code = ?");
@@ -239,7 +264,7 @@ class dbHandler
         $quizId = intval($result['quiz_id']);
         return $quizId;
     } else {
-        return 0; 
+        return null; 
     }
   }
 
