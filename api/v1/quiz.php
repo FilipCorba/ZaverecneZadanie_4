@@ -127,6 +127,13 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
+  case 'copy':
+    if ($method === 'POST') {
+      handleCopyQuestion($quizHandler, $tokenHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
   default:
     handleInvalidEndpoint();
     break;
@@ -151,10 +158,34 @@ function handleCreateQuiz($quizHandler, $tokenHandler)
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
+function handleCopyQuestion($quizHandler, $tokenHandler)
+{
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+   $questionId = isset($_GET['question-id']) ? $_GET['question-id'] : null;
+  $quizHandler->copyQuestion($questionId);
+ }
 function handleGetSurvey($quizHandler)
 {
   $code = isset($_GET['code']) ? $_GET['code'] : null;
-  echo $quizHandler->getSurvey($code);
+  $questions =  $quizHandler-> getSurvey($code);
+  if ($questions==null) {
+    $responseData = [
+      'error' => 'Code not found'
+    ];
+    http_response_code(404);
+    echo json_encode($responseData);
+    exit;
+  }
+  echo $questions;
 }
 function handleGetQR($quizHandler)
 {
