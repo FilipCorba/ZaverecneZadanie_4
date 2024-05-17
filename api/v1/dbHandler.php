@@ -427,6 +427,44 @@ class dbHandler
     return $affectedRows > 0; // Return true if rows were affected (deletion successful), false otherwise
   }
 
+  function changeQuestion($requestData, $userId)
+  {
+      $questionId = $requestData['question_id'];
+      $questionText = $requestData['question_text'];
+      $openQuestion = $requestData['open_question'];
+      $options = $requestData['options'];
+  
+      $this->db->begin_transaction();
+  
+      $deleteOptionsStmt = $this->db->prepare("DELETE FROM options WHERE question_id = ?");
+      $deleteOptionsStmt->bind_param("i", $questionId);
+      $deleteOptionsStmt->execute();
+      $deleteOptionsStmt->close();
+  
+      $updateQuestionStmt = $this->db->prepare("UPDATE questions SET question_text = ?, open_question = ? WHERE question_id = ?");
+      $updateQuestionStmt->bind_param("sii", $questionText, $openQuestion, $questionId);
+      $updateQuestionStmt->execute();
+      $updateQuestionStmt->close();
+  
+      if (!$openQuestion) {
+          foreach ($options as $option) {
+              $optionId = $option['option_id'];
+              $optionText = $option['option_text'];
+              $isCorrect = $option['is_correct'];
+  
+              $insertOptionStmt = $this->db->prepare("INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)");
+              $insertOptionStmt->bind_param("isi", $questionId, $optionText, $isCorrect);
+              $insertOptionStmt->execute();
+              $insertOptionStmt->close();
+          }
+      }
+  
+      $this->db->commit();
+  
+      return true;
+  }
+  
+
   // QUESTION - OPTION
   function insertOption($questionId, $optionText, $isCorrect,)
   {

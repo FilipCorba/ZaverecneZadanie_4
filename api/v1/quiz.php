@@ -26,7 +26,7 @@ switch ($lastUri) {
     break;
   case 'question':
     if ($method === 'PUT') {
-      // handleQuestionChange($tokenHandler);
+      handleQuestionChange($dbHandler, $tokenHandler);
     } elseif ($method === 'DELETE') {
       if (isset($_GET['user-id']) && isset($_GET['quiz-id']) && isset($_GET['question-id'])) {
         handleQuestionDelete($dbHandler, $tokenHandler);
@@ -226,6 +226,7 @@ function handleGetListOfSubjects($tokenHandler, $dbHandler)
 
   echo $dbHandler->getListOfSubjects($userId);
 }
+
 function handleGetQuiz($dbHandler, $tokenHandler)
 {
   $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
@@ -250,6 +251,29 @@ function handleGetQuiz($dbHandler, $tokenHandler)
       'error' => 'Quiz not found',
     ];
     http_response_code(404);
+  }
+
+  echo json_encode($responseData, JSON_PRETTY_PRINT);
+}
+
+function handleQuestionChange($dbHandler, $tokenHandler)
+{
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+  $requestData = json_decode(file_get_contents('php://input'), true);
+  if ($dbHandler->changeQuestion($requestData, $userId)) {
+    $responseData = [
+      'success' => 'Question was successfuly changed',
+    ];
   }
 
   echo json_encode($responseData, JSON_PRETTY_PRINT);
@@ -558,7 +582,8 @@ function handleGetVotingList($dbHandler, $tokenHandler)
 
 // TO DO refactor token validation
 // this has been tested through browser, not postman
-function handleExport($dbHandler, $tokenHandler) {
+function handleExport($dbHandler, $tokenHandler)
+{
   $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
   $participationId = isset($_GET['participation-id']) ? $_GET['participation-id'] : null;
 
@@ -571,7 +596,7 @@ function handleExport($dbHandler, $tokenHandler) {
     echo json_encode($responseData);
     exit;
   }
-  
+
   $participation = $dbHandler->getParticipation($participationId);
 
   header('Content-Type: application/json');
