@@ -561,15 +561,17 @@ function handleGetVotingList($dbHandler, $tokenHandler)
 function handleExport($dbHandler, $tokenHandler) {
   $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
   $participationId = isset($_GET['participation-id']) ? $_GET['participation-id'] : null;
-  //   // $token = $tokenHandler->getTokenFromAuthorizationHeader();
-//   // if (!$tokenHandler->isValidToken($token, $userId)) {
-//   //   $responseData = [
-//   //     'error' => 'Unauthorized token'
-//   //   ];
-//   //   http_response_code(403);
-//   //   echo json_encode($responseData);
-//   //   exit;
-//   // }
+
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+  
   $participation = $dbHandler->getParticipation($participationId);
 
   header('Content-Type: application/json');
