@@ -154,7 +154,7 @@ class dbHandler
                                     q.title, 
                                     q.description, 
                                     q.created_at, 
-                                    s.name as subject_name,
+                                    s.name,
                                     COUNT(questions.question_id) AS number_of_questions,
                                     CASE 
                                         WHEN COUNT(qp.participation_id) > 0 THEN true
@@ -223,6 +223,76 @@ class dbHandler
     return $result;
   }
 
+  function getQuizId($code)
+  {
+    $stmt = $this->db->prepare("SELECT DISTINCT quiz_id FROM quiz_participation WHERE code = ?");
+    $stmt->bind_param("s", $code);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if ($result) {
+        $quizId = intval($result['quiz_id']);
+        return $quizId;
+    } else {
+        return 0; 
+    }
+  }
+
+  function getQuestions($quizId)
+  {
+    $stmt = $this->db->prepare("SELECT question_id, question_text FROM questions WHERE quiz_id = ?");
+    $stmt->bind_param("i", $quizId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stmt->close();
+
+    $questions = [];
+    if ($result) { 
+        while ($row = $result->fetch_assoc()) {
+            $questions[] = $row;
+        }
+    } 
+    return $questions;
+  }
+
+  function getSurvey($questions)
+  {
+    $optionsJson = []; 
+
+    foreach ($questions as $question) {
+        $questionId = $question['question_id'];
+        $questionText = $question['question_text'];
+
+        $stmt = $this->db->prepare("SELECT option_text FROM options WHERE question_id = ?");
+        $stmt->bind_param("i", $questionId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stmt->close();
+
+        $questionOptions = [];
+
+        while ($row = $result->fetch_assoc()) {
+            $questionOptions[] = $row['option_text'];
+        }
+        $quizType = "options";
+        if (count($questionOptions) == 0)
+        {
+          $quizType = "open";
+        }
+
+        $questionData = [
+            'quiz_type' => $quizType,
+            'question' => $questionText,
+            'options' => $questionOptions
+        ];
+
+        $optionsJson[] = $questionData;
+    }
+
+    return json_encode($optionsJson);
+  }
+
   function startVote($quizId, $code)
   {
     $stmt = $this->db->prepare("INSERT INTO quiz_participation (quiz_id, start_time, code) VALUES (?, NOW(), ?)");
@@ -232,7 +302,6 @@ class dbHandler
     $stmt->close();
     return $quizParticipationId;
   }
-
 
   // TO DO - what if questions cannot be correct? like what opinion do you have on...?, what is attempted_questions
   // in what format should total_time_taken be
@@ -250,25 +319,12 @@ class dbHandler
     return $rowsUpdated == 1;
   }
 
-
   function sendVote($questionId, $participationId, $answerText)
   {
     $stmt = $this->db->prepare("INSERT INTO answers (question_id, participation_id, answer_text) VALUES (?, ?, ?)");
     $stmt->bind_param("iis", $questionId, $participationId, $answerText);
     $stmt->execute();
     $stmt->close();
-  }
-
-
-  function doesParticipationExist($participationId)
-  {
-    $stmt = $this->db->prepare("SELECT COUNT(*) AS count FROM quiz_participation WHERE participation_id = ?");
-    $stmt->bind_param("i", $participationId);
-    $stmt->execute();
-    $result = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-
-    return ($result['count'] > 0);
   }
 
   function getParticipation($participationId) {
@@ -286,6 +342,7 @@ class dbHandler
     return $participationData;
 }
 
+
   function getVoteList($quizId)
   {
     $stmt = $this->db->prepare("SELECT * FROM quiz_participation
@@ -299,6 +356,51 @@ class dbHandler
       $quizzes[] = $row;
     }
     return ['data' => $quizzes];
+  }
+
+  function getVoteStatistics($participationId) {
+    $stmt = $this->db->prepare("SELECT q.question_id, q.question_text, q.open_question, a.answer_text, COUNT(*) AS answer_count
+                                  FROM questions q
+                                  JOIN quizzes ON quizzes.quiz_id = q.quiz_id 
+                                  JOIN answers a ON q.question_id = a.question_id
+                                  WHERE a.participation_id = ?
+                                  GROUP BY q.question_id, a.answer_text;");
+    $stmt->bind_param("i", $participationId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $questions = array();
+    while ($row = $result->fetch_assoc()) {
+        $questionIndex = array_search($row['question_text'], array_column($questions, 'question_text'));
+        if ($questionIndex === false) {
+            $questions[] = [
+                'question_id' => $row['question_id'], 
+                'question_text' => $row['question_text'],
+                'open_question' => $row['open_question'],
+                'answers' => [
+                    ['answer_text' => $row['answer_text'], 'answer_count' => $row['answer_count']]
+                ]
+            ];
+        } else {
+            $questions[$questionIndex]['answers'][] = [
+                'answer_text' => $row['answer_text'],
+                'answer_count' => $row['answer_count']
+            ];
+        }
+    }
+    return ['data' => $questions];
+}
+
+
+  function doesParticipationExist($participationId)
+  {
+    $stmt = $this->db->prepare("SELECT COUNT(*) AS count FROM quiz_participation WHERE participation_id = ?");
+    $stmt->bind_param("i", $participationId);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    return ($result['count'] > 0);
   }
 
 

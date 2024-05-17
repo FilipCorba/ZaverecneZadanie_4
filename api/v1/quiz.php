@@ -99,6 +99,13 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
+  case 'survey':
+    if ($method === 'GET') {
+      handleGetSurvey($quizHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
   case 'voting-list':
     if ($method === 'GET') {
       handleGetVotingList($dbHandler, $tokenHandler);
@@ -109,6 +116,13 @@ switch ($lastUri) {
   case 'export':
     if ($method === 'GET') {
       handleExport($dbHandler, $tokenHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
+  case 'statistics':
+    if ($method === 'GET') {
+      handleGetVoteStatistics($dbHandler, $tokenHandler);
     } else {
       handleInvalidRequestMethod();
     }
@@ -137,6 +151,11 @@ function handleCreateQuiz($quizHandler, $tokenHandler)
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
+function handleGetSurvey($quizHandler)
+{
+  $code = isset($_GET['code']) ? $_GET['code'] : null;
+  echo $quizHandler->getSurvey($code);
+}
 function handleGetQR($quizHandler)
 {
   $participationId = isset($_GET['participation-id']) ? $_GET['participation-id'] : null;
@@ -557,6 +576,26 @@ function handleExport($dbHandler, $tokenHandler) {
   // force download
   header('Content-Disposition: attachment; filename="participation.json"');
   echo json_encode($participation);
+}
+
+function handleGetVoteStatistics($dbHandler, $tokenHandler)
+{
+  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+  $participationId = isset($_GET['participation-id']) ? $_GET['participation-id'] : null;
+
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isValidToken($token, $userId)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  $responseData = $dbHandler->getVoteStatistics($participationId);
+
+  echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
 function handleInvalidEndpoint()
