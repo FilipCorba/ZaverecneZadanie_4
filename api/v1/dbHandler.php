@@ -257,10 +257,10 @@ class dbHandler
     $stmt->close();
 
     if ($result) {
-        $quizId = intval($result['quiz_id']);
-        return $quizId;
+      $quizId = intval($result['quiz_id']);
+      return $quizId;
     } else {
-        return null; 
+      return null;
     }
   }
 
@@ -273,51 +273,54 @@ class dbHandler
     $stmt->close();
 
     $questions = [];
-    if ($result) { 
-        while ($row = $result->fetch_assoc()) {
-            $questions[] = $row;
-        }
-    } 
+    if ($result) {
+      while ($row = $result->fetch_assoc()) {
+        $questions[] = $row;
+      }
+    }
     return $questions;
   }
 
   function getSurvey($questions)
   {
-    $optionsJson = []; 
+    $optionsJson = [];
 
     foreach ($questions as $question) {
-        $questionId = $question['question_id'];
-        $questionText = $question['question_text'];
+      $questionId = $question['question_id'];
+      $questionText = $question['question_text'];
 
-        $stmt = $this->db->prepare("SELECT option_text FROM options WHERE question_id = ?");
-        $stmt->bind_param("i", $questionId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $stmt->close();
+      $stmt = $this->db->prepare("SELECT option_text, is_correct FROM options WHERE question_id = ?");
+      $stmt->bind_param("i", $questionId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $stmt->close();
 
-        $questionOptions = [];
+      $questionOptions = [];
+      $correctOptionCount = 0;
 
-        while ($row = $result->fetch_assoc()) {
-            $questionOptions[] = $row['option_text'];
+      while ($row = $result->fetch_assoc()) {
+        $questionOptions[] = $row['option_text'];
+        if ($row['is_correct'] == 1) {
+          $correctOptionCount++;
         }
-        $quizType = "options";
-        if (count($questionOptions) == 0)
-        {
-          $quizType = "open";
-        }
+      }
 
-        $questionData = [
-            'quiz_type' => $quizType,
-            'question_id' => $questionId,
-            'question' => $questionText,
-            'options' => $questionOptions
-        ];
+      $quizType = count($questionOptions) > 0 ? "options" : "open";
 
-        $optionsJson[] = $questionData;
+      $isMultiple = $correctOptionCount > 1;
+
+      $questionData = [
+        'quiz_type' => $quizType,
+        'question_id' => $questionId,
+        'question' => $questionText,
+        'is_multiple' => $isMultiple,
+        'options' => $questionOptions
+      ];
+
+      $optionsJson[] = $questionData;
     }
 
-
-    return json_encode($optionsJson);
+    return $optionsJson;
   }
 
   function startVote($quizId, $code)
@@ -354,7 +357,8 @@ class dbHandler
     $stmt->close();
   }
 
-  function getParticipation($participationId) {
+  function getParticipation($participationId)
+  {
     $stmt = $this->db->prepare("SELECT * FROM quiz_participation
                                 WHERE participation_id = ?;");
     $stmt->bind_param("i", $participationId);
@@ -363,33 +367,35 @@ class dbHandler
 
     $participationData = [];
     while ($row = $result->fetch_assoc()) {
-        $participationData[] = $row;
+      $participationData[] = $row;
     }
 
     return $participationData;
-}
+  }
 
 
-function getParticipationIdByCode($code) {
-  $stmt = $this->db->prepare("SELECT participation_id FROM quiz_participation
+  function getParticipationIdByCode($code)
+  {
+    $stmt = $this->db->prepare("SELECT participation_id FROM quiz_participation
                               WHERE code = ?;");
-  $stmt->bind_param("s", $code);
-  $stmt->execute();
-  $result = $stmt->get_result()->fetch_assoc();
+    $stmt->bind_param("s", $code);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
 
-  return $result['participation_id'];
-}
+    return $result['participation_id'];
+  }
 
-function getQuizNameFromParticipationId($participationId) {
-  $stmt = $this->db->prepare("SELECT q.title FROM quizzes q 
+  function getQuizNameFromParticipationId($participationId)
+  {
+    $stmt = $this->db->prepare("SELECT q.title FROM quizzes q 
                               JOIN quiz_participation qp on qp.quiz_id = q.quiz_id 
                               WHERE qp.participation_id = ?;");
-  $stmt->bind_param("i", $participationId);
-  $stmt->execute();
-  $result = $stmt->get_result()->fetch_assoc();
+    $stmt->bind_param("i", $participationId);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
 
-  return $result['title'];
-}
+    return $result['title'];
+  }
 
   function getVoteList($quizId)
   {
@@ -406,7 +412,8 @@ function getQuizNameFromParticipationId($participationId) {
     return ['data' => $quizzes];
   }
 
-  function getVoteStatistics($participationId) {
+  function getVoteStatistics($participationId)
+  {
     $stmt = $this->db->prepare("SELECT q.question_id, q.question_text, q.open_question, a.answer_text, COUNT(*) AS answer_count
                                   FROM questions q
                                   JOIN quizzes ON quizzes.quiz_id = q.quiz_id 
@@ -419,25 +426,25 @@ function getQuizNameFromParticipationId($participationId) {
 
     $questions = array();
     while ($row = $result->fetch_assoc()) {
-        $questionIndex = array_search($row['question_text'], array_column($questions, 'question_text'));
-        if ($questionIndex === false) {
-            $questions[] = [
-                'question_id' => $row['question_id'], 
-                'question_text' => $row['question_text'],
-                'open_question' => $row['open_question'],
-                'answers' => [
-                    ['answer_text' => $row['answer_text'], 'answer_count' => $row['answer_count']]
-                ]
-            ];
-        } else {
-            $questions[$questionIndex]['answers'][] = [
-                'answer_text' => $row['answer_text'],
-                'answer_count' => $row['answer_count']
-            ];
-        }
+      $questionIndex = array_search($row['question_text'], array_column($questions, 'question_text'));
+      if ($questionIndex === false) {
+        $questions[] = [
+          'question_id' => $row['question_id'],
+          'question_text' => $row['question_text'],
+          'open_question' => $row['open_question'],
+          'answers' => [
+            ['answer_text' => $row['answer_text'], 'answer_count' => $row['answer_count']]
+          ]
+        ];
+      } else {
+        $questions[$questionIndex]['answers'][] = [
+          'answer_text' => $row['answer_text'],
+          'answer_count' => $row['answer_count']
+        ];
+      }
     }
     return ['data' => $questions];
-}
+  }
 
 
   function doesParticipationExist($participationId)
@@ -477,41 +484,41 @@ function getQuizNameFromParticipationId($participationId) {
 
   function changeQuestion($requestData, $userId)
   {
-      $questionId = $requestData['question_id'];
-      $questionText = $requestData['question_text'];
-      $openQuestion = $requestData['open_question'];
-      $options = $requestData['options'];
-  
-      $this->db->begin_transaction();
-  
-      $deleteOptionsStmt = $this->db->prepare("DELETE FROM options WHERE question_id = ?");
-      $deleteOptionsStmt->bind_param("i", $questionId);
-      $deleteOptionsStmt->execute();
-      $deleteOptionsStmt->close();
-  
-      $updateQuestionStmt = $this->db->prepare("UPDATE questions SET question_text = ?, open_question = ? WHERE question_id = ?");
-      $updateQuestionStmt->bind_param("sii", $questionText, $openQuestion, $questionId);
-      $updateQuestionStmt->execute();
-      $updateQuestionStmt->close();
-  
-      if (!$openQuestion) {
-          foreach ($options as $option) {
-              $optionId = $option['option_id'];
-              $optionText = $option['option_text'];
-              $isCorrect = $option['is_correct'];
-  
-              $insertOptionStmt = $this->db->prepare("INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)");
-              $insertOptionStmt->bind_param("isi", $questionId, $optionText, $isCorrect);
-              $insertOptionStmt->execute();
-              $insertOptionStmt->close();
-          }
+    $questionId = $requestData['question_id'];
+    $questionText = $requestData['question_text'];
+    $openQuestion = $requestData['open_question'];
+    $options = $requestData['options'];
+
+    $this->db->begin_transaction();
+
+    $deleteOptionsStmt = $this->db->prepare("DELETE FROM options WHERE question_id = ?");
+    $deleteOptionsStmt->bind_param("i", $questionId);
+    $deleteOptionsStmt->execute();
+    $deleteOptionsStmt->close();
+
+    $updateQuestionStmt = $this->db->prepare("UPDATE questions SET question_text = ?, open_question = ? WHERE question_id = ?");
+    $updateQuestionStmt->bind_param("sii", $questionText, $openQuestion, $questionId);
+    $updateQuestionStmt->execute();
+    $updateQuestionStmt->close();
+
+    if (!$openQuestion) {
+      foreach ($options as $option) {
+        $optionId = $option['option_id'];
+        $optionText = $option['option_text'];
+        $isCorrect = $option['is_correct'];
+
+        $insertOptionStmt = $this->db->prepare("INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)");
+        $insertOptionStmt->bind_param("isi", $questionId, $optionText, $isCorrect);
+        $insertOptionStmt->execute();
+        $insertOptionStmt->close();
       }
-  
-      $this->db->commit();
-  
-      return true;
+    }
+
+    $this->db->commit();
+
+    return true;
   }
-  
+
 
   // QUESTION - OPTION
   function insertOption($questionId, $optionText, $isCorrect,)
