@@ -176,17 +176,17 @@ function handleCopyQuestion($quizHandler, $tokenHandler)
 function handleGetSurvey($quizHandler)
 {
   $code = isset($_GET['code']) ? $_GET['code'] : null;
-  $questions =  $quizHandler-> getSurvey($code);
-  if ($questions==null) {
+  $responseData =  $quizHandler-> getSurvey($code);
+  if ($responseData==null) {
     $responseData = [
       'error' => 'Code not found'
     ];
     http_response_code(404);
-    echo json_encode($responseData);
     exit;
   }
-  echo $questions;
+  echo json_encode($responseData);
 }
+
 function handleGetQR($quizHandler)
 {
   $participationId = isset($_GET['participation-id']) ? $_GET['participation-id'] : null;
@@ -567,8 +567,6 @@ function handleEndVote($dbHandler, $tokenHandler)
 
 function handleSendVote($dbHandler, $tokenHandler, $quizHandler)
 {
-  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
-
   $json = file_get_contents('php://input');
   $requestData = json_decode($json, true);
 
