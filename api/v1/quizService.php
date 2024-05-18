@@ -38,7 +38,7 @@ class QuizHandler
       'qr_code' => $qrCodeUrl, // Include the generated QR code URL in the response
       'code' => $randomCode['code']
     ];
- 
+
     return $responseData;
   }
 
@@ -90,26 +90,26 @@ class QuizHandler
 
   function getSurvey($code)
   {
-      $quizId = $this -> dbHandler -> getQuizId($code);
-      if ($quizId == null) {
-        return null;
-      }
-      $participationId = $this -> dbHandler -> getParticipationIdByCode($code);
-      $quizName = $this -> dbHandler -> getQuizNameFromParticipationId($participationId);
-      $questions = $this -> dbHandler -> getQuestions($quizId);
-      $survey = $this -> dbHandler -> getSurvey($questions, $participationId);
-      $responseData = [
-        'participation_id' => $participationId, 
-        'quiz_name' => $quizName, 
-        'survey' => json_decode($survey)
-      ];
-      return $responseData;
+    $quizId = $this->dbHandler->getQuizId($code);
+    if ($quizId == null) {
+      return null;
+    }
+    $participationId = $this->dbHandler->getParticipationIdByCode($code);
+    $quizName = $this->dbHandler->getQuizNameFromParticipationId($participationId);
+    $questions = $this->dbHandler->getQuestions($quizId);
+    $survey = $this->dbHandler->getSurvey($questions, $participationId);
+    $responseData = [
+      'participation_id' => $participationId,
+      'quiz_name' => $quizName,
+      'survey' => $survey
+    ];
+    return $responseData;
   }
 
   function copyQuestion($questionId)
   {
-    $newQuestionId = $this -> dbHandler -> copyQuestion($questionId);
-    $this -> dbHandler -> copyOptions($newQuestionId, $questionId);
+    $newQuestionId = $this->dbHandler->copyQuestion($questionId);
+    $this->dbHandler->copyOptions($newQuestionId, $questionId);
   }
 
   function processVote($requestData, $dbHandler)
