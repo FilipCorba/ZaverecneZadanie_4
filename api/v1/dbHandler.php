@@ -308,12 +308,14 @@ class dbHandler
 
         $questionData = [
             'quiz_type' => $quizType,
+            'question_id' => $questionId,
             'question' => $questionText,
             'options' => $questionOptions
         ];
 
         $optionsJson[] = $questionData;
     }
+
 
     return json_encode($optionsJson);
   }
@@ -367,6 +369,27 @@ class dbHandler
     return $participationData;
 }
 
+
+function getParticipationIdByCode($code) {
+  $stmt = $this->db->prepare("SELECT participation_id FROM quiz_participation
+                              WHERE code = ?;");
+  $stmt->bind_param("s", $code);
+  $stmt->execute();
+  $result = $stmt->get_result()->fetch_assoc();
+
+  return $result['participation_id'];
+}
+
+function getQuizNameFromParticipationId($participationId) {
+  $stmt = $this->db->prepare("SELECT q.title FROM quizzes q 
+                              JOIN quiz_participation qp on qp.quiz_id = q.quiz_id 
+                              WHERE qp.participation_id = ?;");
+  $stmt->bind_param("i", $participationId);
+  $stmt->execute();
+  $result = $stmt->get_result()->fetch_assoc();
+
+  return $result['title'];
+}
 
   function getVoteList($quizId)
   {

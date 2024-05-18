@@ -94,8 +94,16 @@ class QuizHandler
       if ($quizId == null) {
         return null;
       }
+      $participationId = $this -> dbHandler -> getParticipationIdByCode($code);
+      $quizName = $this -> dbHandler -> getQuizNameFromParticipationId($participationId);
       $questions = $this -> dbHandler -> getQuestions($quizId);
-      return $this -> dbHandler -> getSurvey($questions);
+      $survey = $this -> dbHandler -> getSurvey($questions, $participationId);
+      $responseData = [
+        'participation_id' => $participationId, 
+        'quiz_name' => $quizName, 
+        'survey' => json_decode($survey)
+      ];
+      return $responseData;
   }
 
   function copyQuestion($questionId)
