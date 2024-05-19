@@ -170,14 +170,14 @@ function handleCopyQuestion($quizHandler, $tokenHandler)
     echo json_encode($responseData);
     exit;
   }
-   $questionId = isset($_GET['question-id']) ? $_GET['question-id'] : null;
+  $questionId = isset($_GET['question-id']) ? $_GET['question-id'] : null;
   $quizHandler->copyQuestion($questionId);
- }
+}
 function handleGetSurvey($quizHandler)
 {
   $code = isset($_GET['code']) ? $_GET['code'] : null;
-  $responseData =  $quizHandler-> getSurvey($code);
-  if ($responseData==null) {
+  $responseData = $quizHandler->getSurvey($code);
+  if ($responseData == null) {
     $responseData = [
       'error' => 'Code not found'
     ];
@@ -626,18 +626,18 @@ function handleExport($dbHandler, $tokenHandler)
 
 function handleGetVoteStatistics($dbHandler, $tokenHandler)
 {
-  $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
+  // $userId = isset($_GET['user-id']) ? $_GET['user-id'] : null;
   $participationId = isset($_GET['participation-id']) ? $_GET['participation-id'] : null;
 
-  $token = $tokenHandler->getTokenFromAuthorizationHeader();
-  if (!$tokenHandler->isValidToken($token, $userId)) {
-    $responseData = [
-      'error' => 'Unauthorized token'
-    ];
-    http_response_code(403);
-    echo json_encode($responseData);
-    exit;
-  }
+  // $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  // if (!$tokenHandler->isValidToken($token, $userId)) {
+  //   $responseData = [
+  //     'error' => 'Unauthorized token'
+  //   ];
+  //   http_response_code(403);
+  //   echo json_encode($responseData);
+  //   exit;
+  // }
 
   $responseData = $dbHandler->getVoteStatistics($participationId);
 
