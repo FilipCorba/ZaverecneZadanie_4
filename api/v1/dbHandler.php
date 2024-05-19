@@ -339,7 +339,6 @@ class dbHandler
   {
     $stmt = $this->db->prepare("UPDATE quiz_participation 
               SET end_time = NOW(),
-                  total_time_taken = SEC_TO_TIME(TIMESTAMPDIFF(MINUTE, start_time, NOW())),
                   note = ?
               WHERE participation_id = ? AND end_time IS NULL"); // Changed the condition to check for NULL
     $stmt->bind_param("si", $note, $participationId);
