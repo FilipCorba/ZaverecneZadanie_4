@@ -97,12 +97,19 @@ class QuizHandler
     $participationId = $this->dbHandler->getParticipationIdByCode($code);
     $quizName = $this->dbHandler->getQuizNameFromParticipationId($participationId);
     $questions = $this->dbHandler->getQuestions($quizId);
-    $survey = $this->dbHandler->getSurvey($questions, $participationId);
-    $responseData = [
-      'participation_id' => $participationId,
-      'quiz_name' => $quizName,
-      'survey' => $survey
-    ];
+    if ($this->dbHandler->isParticipationExpired($participationId) != null) {
+      $responseData = [
+        'error' => 'Voting was already closed.'
+      ];
+      http_response_code(400);
+    } else {
+      $survey = $this->dbHandler->getSurvey($questions, $participationId);
+      $responseData = [
+        'participation_id' => $participationId,
+        'quiz_name' => $quizName,
+        'survey' => $survey
+      ];
+    }
     return $responseData;
   }
 
