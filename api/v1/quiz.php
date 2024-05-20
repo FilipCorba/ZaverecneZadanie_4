@@ -71,6 +71,13 @@ switch ($lastUri) {
       handleInvalidRequestMethod();
     }
     break;
+  case 'all-quiz-list':
+    if ($method === 'GET') {
+      handleGetListOfAllQuizzes($dbHandler, $tokenHandler);
+    } else {
+      handleInvalidRequestMethod();
+    }
+    break;
   case 'subjects':
     if ($method === 'GET') {
       handleGetListOfSubjects($tokenHandler, $dbHandler);
@@ -240,6 +247,32 @@ function handleGetListOfQuizzes($dbHandler, $tokenHandler)
   echo json_encode($responseData, JSON_PRETTY_PRINT);
 }
 
+function handleGetListOfAllQuizzes($dbHandler, $tokenHandler)
+{
+
+  $token = $tokenHandler->getTokenFromAuthorizationHeader();
+  if (!$tokenHandler->isAdminToken($token)) {
+    $responseData = [
+      'error' => 'Unauthorized token'
+    ];
+    http_response_code(403);
+    echo json_encode($responseData);
+    exit;
+  }
+
+  $quizList = $dbHandler->getListOfAllQuizzes();
+
+  if ($quizList) {
+    $responseData = $quizList;
+  } else {
+    $responseData = [
+      'error' => 'Quizes not found',
+    ];
+    http_response_code(404);
+  }
+
+  echo json_encode($responseData, JSON_PRETTY_PRINT);
+}
 
 function handleGetListOfSubjects($tokenHandler, $dbHandler)
 {

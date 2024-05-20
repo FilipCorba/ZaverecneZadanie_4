@@ -180,6 +180,40 @@ class dbHandler
     return ['data' => $quizzes];
   }
 
+  function getListOfAllQuizzes()
+  {
+    $stmt = $this->db->prepare("SELECT 
+                                    q.user_id,
+                                    u.name as username, 
+                                    q.quiz_id, 
+                                    q.title, 
+                                    q.description, 
+                                    q.created_at, 
+                                    s.name as subject,
+                                    COUNT(questions.question_id) AS number_of_questions,
+                                    CASE 
+                                        WHEN COUNT(qp.participation_id) = 0 THEN false
+                                        WHEN COUNT(qp.participation_id) > 0 
+                                             AND COUNT(CASE WHEN qp.end_time IS NULL THEN 1 END) > 0 THEN true
+                                        ELSE false
+                                    END AS is_active 
+                                FROM quizzes q
+                                JOIN users u ON q.user_id = u.user_id 
+                                JOIN subjects s ON s.subject_id = q.subject_id 
+                                LEFT JOIN quiz_participation qp ON qp.quiz_id = q.quiz_id 
+                                LEFT JOIN questions ON questions.quiz_id = q.quiz_id 
+                                GROUP BY q.quiz_id, q.title, q.description, q.created_at, s.name;");
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $quizzes = array();
+    while ($row = $result->fetch_assoc()) {
+      $quizzes[] = $row;
+    }
+
+    return ['data' => $quizzes];
+  }
+
 
   function getListOfSubjects($userId)
   {
