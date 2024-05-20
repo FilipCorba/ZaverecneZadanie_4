@@ -387,6 +387,17 @@ class dbHandler
     return $result['participation_id'];
   }
 
+  function isParticipationExpired($participationId)
+  {
+    $stmt = $this->db->prepare("SELECT end_time FROM quiz_participation
+                              WHERE participation_id = ?;");
+    $stmt->bind_param("i", $participationId);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+
+    return $result['end_time'];
+  }
+
   function getQuizNameFromParticipationId($participationId)
   {
     $stmt = $this->db->prepare("SELECT q.title FROM quizzes q 
