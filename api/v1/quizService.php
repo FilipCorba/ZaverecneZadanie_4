@@ -19,10 +19,17 @@ class QuizHandler
     $this->dbHandler = new dbHandler($db);
   }
 
-  public function generateQrCode($participationId)
+  public function generateQrCode($participationId, $code)
   {
-    $randomCode = $this->dbHandler->getCode($participationId);
-    $qrCodeUrl = 'https://node' . PERSONAL_CODE . '.webte.fei.stuba.sk/survey?code=' . $randomCode['code'];
+    
+    if ($code == null) {
+      $randomCode = $this->dbHandler->getCode($participationId);
+      $qrCodeUrl = 'https://node' . PERSONAL_CODE . '.webte.fei.stuba.sk/survey?code=' . $randomCode['code'];
+    } else {
+      $qrCodeUrl = 'https://node' . PERSONAL_CODE . '.webte.fei.stuba.sk/survey?code=' . $code;
+    }
+
+    
 
     $qrCode = QrCode::create($qrCodeUrl)
       ->setRoundBlockSizeMode(RoundBlockSizeMode::Margin)
@@ -61,7 +68,7 @@ class QuizHandler
 
       foreach ($questionData['options'] as $optionData) {
         $optionText = $optionData['value'];
-        $isCorrect = $optionData['isCorrect']  == "true" ? 1 : 0;
+        $isCorrect = $optionData['isCorrect'] == "true" ? 1 : 0;
 
         $this->dbHandler->insertOption($questionId, $optionText, $isCorrect);
       }

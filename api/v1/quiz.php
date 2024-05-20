@@ -197,9 +197,10 @@ function handleGetSurvey($quizHandler)
 function handleGetQR($quizHandler)
 {
   $participationId = isset($_GET['participation-id']) ? $_GET['participation-id'] : null;
+  $code = isset($_GET['code']) ? $_GET['code'] : null;
 
   if ($participationId) {
-    $qrCode = $quizHandler->generateQrCode($participationId);
+    $qrCode = $quizHandler->generateQrCode($participationId, $code);
 
     if ($qrCode) {
       echo json_encode($qrCode, JSON_PRETTY_PRINT);
