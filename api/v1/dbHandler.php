@@ -85,7 +85,7 @@ class dbHandler
                             questions.question_text,
                             questions.open_question,
                             CASE
-                                WHEN questions.open_question = 1 THEN NULL
+                                WHEN questions.open_question = 1 THEN '[]'
                                 ELSE JSON_ARRAYAGG(
                                     JSON_OBJECT(
                                         'option_id', o.option_id,
@@ -137,6 +137,10 @@ class dbHandler
         $questionKey = 'question_' . $row['question_id'];
         $options = json_decode($row['options'], true);
 
+        if ($row['open_question'] == 1) {
+          $options = [];
+        }
+
         $formattedQuizData['questions'][$questionKey] = [
           'question_text' => $row['question_text'],
           'open_question' => $row['open_question'],
@@ -147,6 +151,7 @@ class dbHandler
 
     return $quizData[0]['quiz_id'] != null ? $formattedQuizData : null;
   }
+
 
   function getListOfQuizzes($userId)
   {
@@ -395,19 +400,43 @@ class dbHandler
 
   function getParticipation($participationId)
   {
-    $stmt = $this->db->prepare("SELECT * FROM quiz_participation
-                                WHERE participation_id = ?;");
+    $stmt = $this->db->prepare("SELECT qp.*, q.question_id, q.question_text, o.option_id, o.option_text
+                                FROM quiz_participation qp
+                                JOIN questions q ON qp.quiz_id = q.quiz_id
+                                LEFT JOIN options o ON q.question_id = o.question_id
+                                WHERE qp.participation_id = ?");
     $stmt->bind_param("i", $participationId);
     $stmt->execute();
     $result = $stmt->get_result();
 
     $participationData = [];
     while ($row = $result->fetch_assoc()) {
-      $participationData[] = $row;
+      $participationData['participation_id'] = $row['participation_id'];
+      $participationData['quiz_id'] = $row['quiz_id'];
+      $participationData['code'] = $row['code'];
+      $participationData['start_time'] = $row['start_time'];
+      $participationData['end_time'] = $row['end_time'];
+      $participationData['note'] = $row['note'];
+
+      $questionId = $row['question_id'];
+      $questionText = $row['question_text'];
+
+      if (!isset($participationData['questions'][$questionId])) {
+        $participationData['questions'][$questionId]['question_text'] = $questionText;
+      }
+
+      if (!empty($row['option_id']) && !empty($row['option_text'])) {
+        $participationData['questions'][$questionId]['options'][] = [
+          'option_id' => $row['option_id'],
+          'option_text' => $row['option_text']
+        ];
+      }
     }
 
     return $participationData;
   }
+
+
 
 
   function getParticipationIdByCode($code)
